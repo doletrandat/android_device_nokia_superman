@@ -83,10 +83,22 @@ have not yet been validated on hardware.
 
 The older Mainline4Lumia `lk` tree has genuine UEFI-aware MSM8226 targets for
 `tesla` and `moneypenny`, but no `superman` target. Tesla is a useful 720x1280
-reference; it must not be deployed unchanged because its UEFI framebuffer and
-device assumptions are not established for Lumia 730. The next payload is an
-instrumented Superman-specific LK diagnostic that provides visible progress
-markers before attempting another kernel boot.
+reference, but it must not be deployed unchanged because it retains
+Tesla-specific device assumptions and lacks this project's SD/ext2 changes.
+
+The historical targets identify `0x0F2FF080` as the live UEFI framebuffer.
+This does not conflict with the modern Linux DTS reservation at `0x03200000`:
+the former is the framebuffer inherited from Lumia UEFI by chainloaded LK,
+while the latter belongs to Linux's later simple-framebuffer description.
+
+The next payload keeps the Superman SD/ext2 path and writes eight bounded
+progress bands directly into the inherited 720x1280 BGRA framebuffer, without
+reinitializing or shutting down the panel. The markers cover early platform
+entry, clocks, interrupt/timer setup, target entry, PMIC/keys, storage setup,
+successful `/boot.img` loading, and the final Linux handoff. This should locate
+the reset boundary using video even without debug UART. The diagnostic LK ELF
+remains an unpublished, reversible hardware-test artifact until its behavior
+is observed on the phone.
 
 ## Legacy boot-image contract
 
