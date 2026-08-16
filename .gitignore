@@ -1,0 +1,10 @@
+# Generated kernel and Android artifacts
+/prebuilt/
+*.img
+*.log
+
+# Editor and host metadata
+.DS_Store
+Thumbs.db
+*.swp
+*~

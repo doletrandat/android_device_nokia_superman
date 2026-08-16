@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Enable the recovery ramdisk's FunctionFS ADB service for headless bring-up.
+# Android init supplies sys.usb.controller from the first registered UDC.
+
+on init
+    setprop sys.usb.configfs 1
+    setprop persist.sys.usb.config adb
+    setprop sys.usb.config adb

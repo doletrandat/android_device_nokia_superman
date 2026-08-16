@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# USB-only diagnostic defaults for the first Lumia 730 bring-up image.
+# init discovers the actual UDC name from /sys/class/udc.
+
+on boot
+    setprop sys.usb.configfs 1
+    setprop persist.sys.usb.config adb
+    setprop sys.usb.config adb
