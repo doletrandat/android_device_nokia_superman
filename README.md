@@ -54,6 +54,40 @@ The audited lk1st source is branch `msm8226-messy-lk1st-lumia`, commit
 microSD (`hd2`) before eMMC (`hd1`) and loads a root-directory filename whose
 first seven characters are `boot.img`. Use the unambiguous name `boot.img`.
 
+## Hardware validation status
+
+Boot Shim and Stage2 have run on an unlocked Lumia 730 RM-1040 through a
+reversible Windows Boot Manager entry. The first lk1st ELF used the generic
+MSM8226 entry point `0x07F00000`; Stage2 rejected it with `Invalid entry point`
+when UEFI could not allocate that address.
+
+Mainline4Lumia's UEFI-chainloaded MSM8226 Lumia targets use
+`MEMBASE = 0x07300000`. An otherwise equivalent lk1st ELF linked there passed
+Stage2's allocation and loading checks on hardware:
+
+```text
+ELF entry point = 0x7300000
+ELF offset = 0x1000
+ELF length = 0x5A568
+Allocate memory at 0x7300000
+Allocate 0x5B pages memory
+Memory copied!
+NumCpus requested: return 1
+```
+
+The phone reset immediately after the UEFI handoff and returned to Windows
+Phone. There was no LK framebuffer output, ADB enumeration, or other evidence
+that distinguishes an early LK fault from LK reaching and launching a failing
+kernel. Consequently, the microSD, boot image, kernel, and recovery userspace
+have not yet been validated on hardware.
+
+The older Mainline4Lumia `lk` tree has genuine UEFI-aware MSM8226 targets for
+`tesla` and `moneypenny`, but no `superman` target. Tesla is a useful 720x1280
+reference; it must not be deployed unchanged because its UEFI framebuffer and
+device assumptions are not established for Lumia 730. The next payload is an
+instrumented Superman-specific LK diagnostic that provides visible progress
+markers before attempting another kernel boot.
+
 ## Legacy boot-image contract
 
 lk1st forces these load addresses:
