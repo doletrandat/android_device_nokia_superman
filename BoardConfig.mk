@@ -32,8 +32,29 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 67108864
 BOARD_FLASH_BLOCK_SIZE := 2048
 TARGET_RECOVERY_FSTAB := device/nokia/superman/recovery.fstab
+
+# Legacy, non-dynamic Android layout carried entirely by removable microSD.
+# Vendor, product, and system_ext stay folded into system so this first normal
+# boot milestone needs only one read-only OS partition and one data partition.
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1610612736
+BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 1073741824
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_SPARSE_EXT_DISABLED := true
+
+# The pre-init logger mounts LUMIA_BOOT here. Android first-stage SwitchRoot
+# requires the same mount-point directory to exist in the new system root.
+BOARD_ROOT_EXTRA_FOLDERS += lumia_sd
+
+# Use AOSP's software/reference hardware path until device-specific HALs exist.
+BOARD_USES_GENERIC_AUDIO := true
+USE_CAMERA_STUB := true
+USE_OPENGL_RENDERER := true
+BOARD_USE_LEGACY_UI := true
+TARGET_USE_PAN_DISPLAY := true
+BOARD_SEPOLICY_DIRS += build/target/board/generic/sepolicy
 
 # Keep authentication disabled for the headless recovery diagnostic image.
 ALLOW_ADBD_NO_AUTH := 1

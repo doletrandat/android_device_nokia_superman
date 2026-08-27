@@ -1,9 +1,19 @@
 # Nokia Lumia 730 (Superman) AOSP 11 bring-up
 
 > [!WARNING]
-> This is an experimental, pre-boot Android port. No published image is known
-> to boot on Lumia 730 hardware yet. Keep a verified recovery FFU and EFIESP
-> backup before attempting any bootloader or storage change.
+> This remains an experimental Android port. Test only complete removable-
+> microSD images; never write its Android partitions to the phone's internal
+> eMMC. Keep a verified recovery FFU and EFIESP backup.
+
+## Current hardware milestone
+
+The phone-proven path now reaches Android 11 Zygote, SurfaceFlinger, and
+BootAnimation from microSD. The remaining failure is nondeterministic
+cross-process memory corruption reproduced with exact, filesystem-clean images
+on two independently verified cards. The current controlled diagnostic adds
+only `maxcpus=1` to the otherwise exact V21 boot-image command line to isolate
+SMP/cache coherency from physical RAM instability. Generated test images and
+device logs remain outside this source repository.
 
 This repository is intended to live at `device/nokia/superman` inside an
 `android-11.0.0_r48` source checkout. It contains original device integration
@@ -20,8 +30,9 @@ device/nokia/superman/scripts/prepare-kernel-prebuilt.sh \
 ```
 
 This directory is an experimental Android 11 product configuration for the
-Nokia Lumia 730 Dual SIM (RM-1040, `superman`). It is not a functional Android
-port and its current `boot.img` must not be deployed to a phone.
+Nokia Lumia 730 Dual SIM (RM-1040, `superman`). It is not a daily-usable port.
+Build outputs must be audited and deployed only as complete removable-microSD
+images.
 
 ## Verified identity and boot chain
 
