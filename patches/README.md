@@ -30,3 +30,17 @@ failed early. No automatic CPU reset/online retries are added.
 See `handoff/evidence/r37-compat-applied-20260923/applied.md` at the AOSP root
 for checks and build limitations. Full system/SD packaging and device tests
 are separate from these source/component validations.
+
+## CPU control and clock candidate
+
+`scripts/build-cpu-control.sh` builds an isolated kernel-only control from the
+preserved uninstrumented snapshot and captured r37 config. The verifier checks
+all preserved module import CRCs and creates a separate boot-only artifact.
+`scripts/compare-cpu-control.py` classifies every difference in its decompressed
+Image versus the hash-pinned working Image. Product prebuilts are untouched.
+
+`r37-cpu-clock.config` is a staged follow-up, not selected by the control or
+product: it enables the missing APCS clock provider. Its olddefconfig result
+has no other functional changes. Test the rebuilt control on hardware before
+building/promoting the clock or SMP-marker candidates. Full details are in
+`handoff/evidence/r37-cpu-control-20260923/README.md` at the AOSP root.
