@@ -1,0 +1,44 @@
+# Runs after the device-specific post-fs hook has mounted /system and /lumia_sd.
+service superman-kerneldiag /system/bin/superman-kerneldiag
+    class core
+    user root
+    group root
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+# The binary is static and does not depend on logd, linker, or ART.
+service superman-memdiag /system/bin/superman-memdiag
+    class core
+    user root
+    group root
+    # Temporary bring-up diagnostic, matching superman-diag-capture.
+    # Init requires an explicit context even with SELinux permissive.
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+service superman-tombdiag /system/bin/superman-memdiag --tombstones
+    class core
+    user root
+    group root
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+service superman-fbdiag /system/bin/superman-memdiag --framebuffer
+    class core
+    user root
+    group root
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+# Independent bounded heartbeats; no shell, logd, ART, dumpsys or framebuffer IO.
+service superman-healthdiag /system/bin/superman-healthdiag
+    class core
+    user root
+    group root
+    seclabel u:r:init:s0
+    disabled
+    oneshot

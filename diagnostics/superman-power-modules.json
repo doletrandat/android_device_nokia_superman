@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "scope": "Lumia 730 MSM8226; preserved r33/r34/r35 boot only",
+  "boot_sha256": "3926ea3dc1bc6bc129df6aa3f8ebbb906d2e8ab735067a3d847cbfc111bb4d58",
+  "source_commit": "b75aff58cd0646da93b98e0482f99b723ff0776c",
+  "captured_config_sha256": "523d7334a8e0f9e6bbebaa06065892487b99310d06f525b10d001b2a3a9e3652",
+  "compiler": "GCC 13.3.0-6ubuntu2~24.04, binutils 2.42",
+  "module_layout_crc": "0x71e4016d",
+  "distinct_imports_checked": 44,
+  "reboot_mode_sha256": "61a297813fee8a47aee7b67aafe670614251f685d4306849ccba4bc1c4f75f26",
+  "qcom_pon_sha256": "967d6f8b208605cf142e71c8f8875feaa8929f2ee4fd5319d7bf3abe29b05f56",
+  "pwrkey_sha256": "1eca7157065b83a212db0857b5b6f1b1df646ff759f037527272f600d277b353",
+  "load_order": ["reboot-mode", "qcom-pon", "pm8941-pwrkey"],
+  "runtime_result": "pending-device-test",
+  "evidence": "handoff/evidence/r35-input-fix-20260920"
+}

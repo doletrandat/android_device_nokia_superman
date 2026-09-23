@@ -1,0 +1,12 @@
+# Vendor init is parsed after system services; preserve bootanim behavior while
+# routing early linker/runtime stderr through init's inherited kmsg descriptor.
+service bootanim /system/bin/bootanimation
+    override
+    class core animation
+    user graphics
+    group graphics audio
+    disabled
+    oneshot
+    ioprio rt 0
+    task_profiles MaxPerformance
+    stdio_to_kmsg

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scope": "Lumia 730 Superman MSM8226; preserved r33 kernel only",
+  "boot_sha256": "3926ea3dc1bc6bc129df6aa3f8ebbb906d2e8ab735067a3d847cbfc111bb4d58",
+  "kernel_image_sha256": "66d0561ed23a3a40f46b23a6b226879c01bb85b010f907b5b56cd7cb3151c5a1",
+  "captured_config_sha256": "523d7334a8e0f9e6bbebaa06065892487b99310d06f525b10d001b2a3a9e3652",
+  "source_commit": "b75aff58cd0646da93b98e0482f99b723ff0776c",
+  "compiler": "GCC 13.3.0-6ubuntu2~24.04, binutils 2.42",
+  "module_layout_crc": "0x71e4016d",
+  "baseline_kernel_imports_independently_checked": 84,
+  "candidate_transport_imports_independently_checked": 28,
+  "touch_core_sha256": "de162feeb8f93508828df7c1ef71e2a2abb72ce3fc3e3fd5b544ada7cbcca2a3",
+  "touch_i2c_sha256": "67bdae9dcbf880df76e46efab8203f14dcc9a6974fd18746b81b5ffb83558597",
+  "candidate": "r36-source: boot-completed-once, startup_delay_ms=100, single probe; readiness hypothesis unverified",
+  "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8",
+  "load_order": [
+    "rmi_core",
+    "rmi_i2c"
+  ],
+  "runtime_touch_result": "pending-device-test",
+  "evidence": "handoff/evidence/r36-touch-candidate-20260920; baseline handoff/evidence/touch-r33-20260919"
+}

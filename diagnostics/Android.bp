@@ -1,0 +1,27 @@
+cc_binary {
+    name: "superman-kerneldiag",
+    srcs: ["superman-kerneldiag.c"],
+    static_executable: true,
+    compile_multilib: "32",
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-memdiag",
+    srcs: ["superman-memdiag.c"],
+    static_executable: true,
+    compile_multilib: "32",
+    cflags: [
+        "-Werror",
+        "-Wno-unused-parameter",
+        "-fno-strict-aliasing",
+    ],
+}
+
+cc_binary {
+    name: "superman-healthdiag",
+    srcs: ["superman-healthdiag.c"],
+    static_executable: true,
+    compile_multilib: "32",
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}

@@ -1,0 +1,34 @@
+From: Codex review artifact
+Subject: [REVIEW ONLY] Superman: evaluate MDSS and Adreno enablement
+
+This patch is intentionally not applied. It is a minimal DT-only proposal for
+static review and later controlled validation. It does not add a panel,
+firmware, Android HAL, or userspace graphics implementation.
+
+diff --git a/arch/arm/boot/dts/qcom/qcom-msm8226-nokia-superman.dts b/arch/arm/boot/dts/qcom/qcom-msm8226-nokia-superman.dts
+--- a/arch/arm/boot/dts/qcom/qcom-msm8226-nokia-superman.dts
++++ b/arch/arm/boot/dts/qcom/qcom-msm8226-nokia-superman.dts
+@@ -42,6 +42,23 @@
+ 	};
+ };
+ 
++/*
++ * REVIEW ONLY: the common MSM8226 DT already describes these blocks, but
++ * leaves them disabled. Enabling them alone is not expected to produce a
++ * visible display: this Superman DT has no panel/DSI endpoint yet, and the
++ * Android product still selects SwiftShader/default gralloc.
++ *
++ * Do not deploy this hunk until the exact panel initialization sequence,
++ * matching kernel/userspace graphics stack, and recovery path are reviewed.
++ */
++&mdss {
++	status = "okay";
++};
++
++&gpu {
++	status = "okay";
++};
++
+ &blsp1_i2c3 {
+ 	status = "okay";
+ 
