@@ -1,0 +1,19 @@
+/dts-v1/;
+/plugin/;
+
+/* Experimental Lumia 730 quarantine; firmware ownership is unconfirmed. */
+/ {
+    fragment@0 {
+        target-path = "/reserved-memory";
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            diagnostic-quarantine@f500000 {
+                /* r14 failures reached physical page 0x0fd00000.
+                 * Experimental 11 MiB interval [0x0f500000,0x10000000). */
+                reg = <0x0f500000 0x00b00000>;
+                no-map;
+            };
+        };
+    };
+};
