@@ -1,0 +1,173 @@
+--- a/frameworks/base/packages/SoundPicker/AndroidManifest.xml
++++ b/frameworks/base/packages/SoundPicker/AndroidManifest.xml
+@@ -3,6 +3,7 @@
+         android:sharedUserId="android.media">
+ 
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.MANAGE_USERS" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+ 
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbBackend.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbBackend.java
+@@ -82,22 +82,28 @@
+     }
+ 
+     public long getCurrentFunctions() {
+-        return mUsbManager.getCurrentFunctions();
++        return mUsbManager == null ? UsbManager.FUNCTION_NONE : mUsbManager.getCurrentFunctions();
+     }
+ 
+     public void setCurrentFunctions(long functions) {
+-        mUsbManager.setCurrentFunctions(functions);
++        if (mUsbManager != null) mUsbManager.setCurrentFunctions(functions);
+     }
+ 
+     public long getDefaultUsbFunctions() {
+-        return mUsbManager.getScreenUnlockedFunctions();
++        return mUsbManager == null ? UsbManager.FUNCTION_NONE
++                : mUsbManager.getScreenUnlockedFunctions();
+     }
+ 
+     public void setDefaultUsbFunctions(long functions) {
+-        mUsbManager.setScreenUnlockedFunctions(functions);
++        if (mUsbManager != null) mUsbManager.setScreenUnlockedFunctions(functions);
++    }
++
++    public boolean isServiceUnavailable() {
++        return mUsbManager == null;
+     }
+ 
+     public boolean areFunctionsSupported(long functions) {
++        if (isServiceUnavailable()) return false;
+         if ((!mMidiSupported && (functions & UsbManager.FUNCTION_MIDI) != 0)
+                 || (!mTetheringSupported && (functions & UsbManager.FUNCTION_RNDIS) != 0)) {
+             return false;
+@@ -218,13 +224,14 @@
+     private void updatePorts() {
+         mPort = null;
+         mPortStatus = null;
++        if (isServiceUnavailable()) return;
+         List<UsbPort> ports = mUsbManager.getPorts();
+         // For now look for a connected port, in the future we should identify port in the
+         // notification and pick based on that.
+         final int N = ports.size();
+         for (int i = 0; i < N; i++) {
+             UsbPortStatus status = ports.get(i).getStatus();
+-            if (status.isConnected()) {
++            if (status != null && status.isConnected()) {
+                 mPort = ports.get(i);
+                 mPortStatus = status;
+                 break;
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbConnectionBroadcastReceiver.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbConnectionBroadcastReceiver.java
+@@ -54,6 +54,7 @@
+ 
+     @Override
+     public void onReceive(Context context, Intent intent) {
++        if (mUsbBackend.isServiceUnavailable()) return;
+         if (UsbManager.ACTION_USB_STATE.equals(intent.getAction())) {
+             mConnected = intent.getExtras().getBoolean(UsbManager.USB_CONNECTED)
+                     || intent.getExtras().getBoolean(UsbManager.USB_HOST_CONNECTED);
+@@ -93,6 +94,13 @@
+     }
+ 
+     public void register() {
++        if (mUsbBackend.isServiceUnavailable()) {
++            if (mUsbConnectionListener != null) {
++                mUsbConnectionListener.onUsbConnectionChanged(false, UsbManager.FUNCTION_NONE,
++                        UsbPortStatus.POWER_ROLE_NONE, UsbPortStatus.DATA_ROLE_NONE);
++            }
++            return;
++        }
+         if (!mListeningToUsbEvents) {
+             mConnected = false;
+             final IntentFilter intentFilter = new IntentFilter();
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsController.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsController.java
+@@ -48,7 +48,7 @@
+ 
+     @Override
+     public boolean isAvailable() {
+-        return true;
++        return !mUsbBackend.isServiceUnavailable();
+     }
+ 
+     /**
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsDataRoleController.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsDataRoleController.java
+@@ -113,7 +113,7 @@
+ 
+     @Override
+     public boolean isAvailable() {
+-        return !Utils.isMonkeyRunning();
++        return super.isAvailable() && !Utils.isMonkeyRunning();
+     }
+ 
+     @Override
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsFunctionsController.java
+@@ -163,7 +163,7 @@
+ 
+     @Override
+     public boolean isAvailable() {
+-        return !Utils.isMonkeyRunning();
++        return super.isAvailable() && !Utils.isMonkeyRunning();
+     }
+ 
+     @Override
+--- a/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsPowerRoleController.java
++++ b/packages/apps/Settings/src/com/android/settings/connecteddevice/usb/UsbDetailsPowerRoleController.java
+@@ -123,7 +123,7 @@
+ 
+     @Override
+     public boolean isAvailable() {
+-        return !Utils.isMonkeyRunning();
++        return super.isAvailable() && !Utils.isMonkeyRunning();
+     }
+ 
+     @Override
+--- a/packages/apps/Settings/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbBackendTest.java
++++ b/packages/apps/Settings/tests/robotests/src/com/android/settings/connecteddevice/usb/UsbBackendTest.java
+@@ -77,6 +77,30 @@
+     }
+ 
+     @Test
++    public void missingService_noPortsFunctionsOrActions() {
++        when((Object) mContext.getSystemService(UsbManager.class)).thenReturn(null);
++        final UsbBackend backend = new UsbBackend(mContext, mUserManager);
++        assertThat(backend.isServiceUnavailable()).isTrue();
++        assertThat(backend.getCurrentFunctions()).isEqualTo(UsbManager.FUNCTION_NONE);
++        assertThat(backend.getDefaultUsbFunctions()).isEqualTo(UsbManager.FUNCTION_NONE);
++        assertThat(backend.areFunctionsSupported(UsbManager.FUNCTION_MTP)).isFalse();
++        assertThat(backend.getDataRole()).isEqualTo(UsbPortStatus.DATA_ROLE_NONE);
++        assertThat(backend.getPowerRole()).isEqualTo(UsbPortStatus.POWER_ROLE_NONE);
++        backend.setCurrentFunctions(UsbManager.FUNCTION_MTP);
++        backend.setDefaultUsbFunctions(UsbManager.FUNCTION_MTP);
++        backend.setDataRole(DATA_ROLE_HOST);
++        backend.setPowerRole(POWER_ROLE_SOURCE);
++    }
++
++    @Test
++    public void presentService_emptyPorts_isAvailableWithoutConnection() {
++        when(mUsbManager.getPorts()).thenReturn(Collections.emptyList());
++        final UsbBackend backend = new UsbBackend(mContext, mUserManager);
++        assertThat(backend.isServiceUnavailable()).isFalse();
++        assertThat(backend.getDataRole()).isEqualTo(UsbPortStatus.DATA_ROLE_NONE);
++    }
++
++    @Test
+     public void setDataRole_allRolesSupported_shouldSetDataRole() {
+         final UsbBackend usbBackend = new UsbBackend(mContext, mUserManager);
+ 
+--- a/build/make/core/Makefile
++++ b/build/make/core/Makefile
+@@ -497,6 +497,8 @@
+     $(TARGET_OUT)/bin/superman-memdiag $(TARGET_OUT)/bin/superman-healthdiag \
+     $(TARGET_OUT)/bin/superman-kerneldiag $(TARGET_OUT)/framework/framework-res.apk \
+     $(TARGET_OUT)/etc/permissions/android.software.app_widgets.xml \
++    $(TARGET_OUT_VENDOR)/etc/seccomp_policy/mediaextractor.policy \
++    $(TARGET_OUT)/etc/permissions/privapp-permissions-superman.xml \
+     $(TARGET_OUT)/apex/com.android.art.debug/lib/libart-compiler.so \
+     $(TARGET_OUT)/apex/com.android.runtime/lib/bionic/libc.so \
+     $(TARGET_OUT)/apex/com.android.runtime/bin/linker \

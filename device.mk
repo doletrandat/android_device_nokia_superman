@@ -7,15 +7,22 @@ PRODUCT_COPY_FILES += \
     device/nokia/superman/fstab.superman:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.superman \
     device/nokia/superman/fstab.superman.late:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.superman.late \
     device/nokia/superman/init.superman.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.superman.rc \
+    device/nokia/superman/diagnostics/superman-diag-capture.sh:$(TARGET_COPY_OUT_VENDOR)/bin/superman-diag-capture.sh \
+    device/nokia/superman/diagnostics/superman-reboot-capture.sh:$(TARGET_COPY_OUT_VENDOR)/bin/superman-reboot-capture.sh \
+    device/nokia/superman/diagnostics/superman-storage-capture-mode.sh:$(TARGET_COPY_OUT_VENDOR)/bin/superman-storage-capture-mode.sh \
+    device/nokia/superman/diagnostics/superman-memdiag.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/superman-memdiag.rc \
+    device/nokia/superman/diagnostics/superman-bootanim.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/superman-bootanim.rc \
     device/nokia/superman/init.recovery.superman.rc:recovery/root/init.recovery.superman.rc \
     device/nokia/superman/prebuilt/power-r35/reboot-mode.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/reboot-mode.ko \
     device/nokia/superman/prebuilt/power-r35/qcom-pon.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/qcom-pon.ko \
-    device/nokia/superman/prebuilt/power-r35/pm8941-pwrkey.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/pm8941-pwrkey.ko
+    device/nokia/superman/prebuilt/power-r35/pm8941-pwrkey.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/pm8941-pwrkey.ko \
+    device/nokia/superman/diagnostics/superman-power-modules.json:$(TARGET_COPY_OUT_VENDOR)/etc/superman-power-modules.json
 
 # Preserve the exact hardware-tested r37 pair, including its r36 transport.
 PRODUCT_COPY_FILES += \
     device/nokia/superman/prebuilt/touch-r33/rmi_core.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/rmi_core.ko \
-    device/nokia/superman/prebuilt/touch-r36/rmi_i2c.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/rmi_i2c.ko
+    device/nokia/superman/prebuilt/touch-r36/rmi_i2c.ko:$(TARGET_COPY_OUT_VENDOR)/lib/modules/rmi_i2c.ko \
+    device/nokia/superman/diagnostics/superman-touch-modules.json:$(TARGET_COPY_OUT_VENDOR)/etc/superman-touch-modules.json
 
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
     persist.sys.usb.config=adb \
@@ -40,6 +47,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.superman.allow_missing_nflog=true
 
 PRODUCT_REQUIRES_INSECURE_EXECMEM_FOR_SWIFTSHADER := true
+
+PRODUCT_COPY_FILES += \
+    device/nokia/superman/diagnostics/mediaextractor.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/mediaextractor.policy \
+    device/nokia/superman/diagnostics/privapp-permissions-superman.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-superman.xml
 
 # LocationManagerService requires a direct-boot-aware fused provider at phase 600.
 PRODUCT_PACKAGES += FusedLocation
@@ -72,6 +83,9 @@ PRODUCT_PACKAGES += \
     libGLESv2_swiftshader \
     libRS \
     librs_jni \
+    superman-memdiag \
+    superman-healthdiag \
+    superman-kerneldiag \
     toybox
 
 # Reference audio plumbing for framework bring-up; no physical codec support.

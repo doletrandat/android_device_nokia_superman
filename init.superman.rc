@@ -46,6 +46,22 @@ on fs
 
 on post-fs
     write /dev/kmsg SUPERMAN_DIAG_POST_FS
+    # Apply only to the verified external capture mount; preserve boot ramdisk.
+    exec u:r:init:s0 root root -- /system/bin/sh /vendor/bin/superman-storage-capture-mode.sh
+    start superman-diag-capture
+    start superman-memdiag
+    # Late paired shell captures replace the early SD-streaming fb collector.
+    # Service definition retained for explicit diagnostic use.
+    start superman-tombdiag
+    start superman-healthdiag
+    start superman-kerneldiag
 
 on property:sys.powerctl=*
     write /dev/kmsg SUPERMAN_DIAG_POWERCTL
+
+service superman-diag-capture /vendor/bin/superman-diag-capture.sh
+    class core
+    user root
+    group root log
+    seclabel u:r:init:s0
+    disabled

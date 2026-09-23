@@ -180,6 +180,23 @@ int main(void) {
         sample_file("/sys/class/block/mmcblk1/mmcblk1p3/stat");
         sample_file("/sys/devices/system/cpu/online");
         sample_processes("/proc");
+        /* Passive CPU state after process samples; keep the 12-KiB cap. */
+        if (tick == 0 || tick == 30) {
+            sample_file("/sys/devices/system/cpu/possible");
+            sample_file("/sys/devices/system/cpu/present");
+            sample_file("/sys/devices/system/cpu/offline");
+            for (unsigned cpu = 0; cpu < 4; ++cpu) {
+                static const char *leaves[] = {"online", "topology/core_id",
+                    "cpufreq/scaling_driver", "cpufreq/scaling_governor",
+                    "cpufreq/scaling_cur_freq", "cpufreq/cpuinfo_cur_freq"};
+                for (size_t i = 0; i < sizeof(leaves) / sizeof(leaves[0]); ++i) {
+                    char path[160];
+                    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u/%s",
+                             cpu, leaves[i]);
+                    sample_file(path);
+                }
+            }
+        }
         record(1, "HEALTH_END tick=%u uptime=%lld bytes=%zu output_errors=%u omitted_records=%u",
                tick, uptime(), output_bytes, output_errors, snapshot_limited);
         if (output >= 0) {
