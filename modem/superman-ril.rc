@@ -1,0 +1,16 @@
+service superman-ril /vendor/bin/hw/rild.superman -l /vendor/lib/libsuperman-ril.so
+    class hal
+    user root
+    group root radio cache inet misc audio log readproc wakelock
+    capabilities NET_ADMIN NET_RAW BLOCK_SUSPEND
+    oneshot
+    seclabel u:r:su:s0
+
+on property:vendor.superman.modem.state=transport_ready
+    start superman-ril
+
+on property:vendor.superman.modem.state=stopped
+    stop superman-ril
+
+on property:vendor.superman.modem.state=failed
+    stop superman-ril

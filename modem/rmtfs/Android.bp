@@ -1,0 +1,7 @@
+cc_binary {
+    name: "superman-rmtfs",
+    vendor: true,
+    srcs: ["upstream/rmtfs.c", "upstream/qmi_rmtfs.c", "upstream/rproc.c", "upstream/util.c", "storage-superman.c", "sharedmem-superman.c", "qrtr/lib/logging.c", "qrtr/lib/qmi.c", "qrtr/lib/qrtr.c"],
+    local_include_dirs: ["upstream", "qrtr/include", "qrtr/lib"],
+    cflags: ["-DANDROID", "-Wall", "-Wextra", "-Wno-unused-parameter", "-Wno-sign-compare"],
+}

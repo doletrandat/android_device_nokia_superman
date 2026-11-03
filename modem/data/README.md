@@ -1,0 +1,2 @@
+Unmodified Linux qcom_bam_dmux.c from the selected kernel source. GPL-2.0-only.
+Build externally against the exact qualified kernel output; PF30 data-module/BUILD.json records the -j20 read-only build recipe and unchanged kernel hashes. All 74 imports match the actual linked kernel ELF. The native driver created eight raw IP channels and unloaded cleanly, with no data session or interface activation. This does not establish carrier data connectivity.

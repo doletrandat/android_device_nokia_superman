@@ -1,0 +1,91 @@
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -21,6 +21,7 @@
+ #include <linux/kstrtox.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <crypto/sha2.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+@@ -575,6 +576,80 @@
+  * track the metadata allocation, this needs to be released by invoking
+  * qcom_scm_pas_metadata_release() by the caller.
+  */
++
++/* Exact Superman stock MBA SSD v2 envelope. Normal TZ verification/decryption;
++ * no key installation, key extraction, authentication bypass or peripheral boot.
++ * ABI: Qualcomm LK 7042fa3 platform/msm_shared/{scm.c,include/scm.h}.
++ */
++#define SUPERMAN_SSD_SIZE 238148
++#define SUPERMAN_SSD_XML_SIZE 1764
++static DEFINE_MUTEX(superman_ssd_lock);
++int qcom_scm_superman_ssd_available(void);
++int qcom_scm_superman_mba_decrypt(const void *encrypted, size_t len,
++                                void *plain, size_t *plain_len, u32 *stage_status);
++int qcom_scm_superman_ssd_available(void)
++{
++ if (!of_machine_is_compatible("nokia,superman") ||
++     !of_machine_is_compatible("qcom,msm8226")) return -ENODEV;
++ if (!__scm) return -EPROBE_DEFER;
++ /* The referenced command-buffer ABI is legacy-only. */
++ if (__get_convention()!=SMC_CONVENTION_LEGACY) return -EOPNOTSUPP;
++ return (__qcom_scm_is_call_available(__scm->dev,7,6)?1:0) |
++        (__qcom_scm_is_call_available(__scm->dev,7,7)?2:0);
++}
++EXPORT_SYMBOL_GPL(qcom_scm_superman_ssd_available);
++int qcom_scm_superman_mba_decrypt(const void *encrypted, size_t len,
++                                void *plain, size_t *plain_len, u32 *stage_status)
++{
++ static const u8 expected[32]={0x13,0x68,0xec,0xe2,0x6d,0xe9,0x44,0xcb,0xad,0x5f,0x97,0x00,0xad,0x85,0x96,0x6f,0xf5,0xd9,0xff,0xc8,0x26,0x89,0xdf,0x80,0x38,0x2c,0x05,0x54,0xd5,0xa0,0xdd,0xa0};
++ u8 digest[32];void *buf;dma_addr_t phys;u32 ctx;int ret;size_t md_len;
++ struct qcom_scm_desc desc={.svc=7,.owner=ARM_SMCCC_OWNER_SIP};
++ struct qcom_scm_res res={0};
++ if (!encrypted || !plain || !plain_len || !stage_status ||
++     len!=SUPERMAN_SSD_SIZE || *plain_len < len-SUPERMAN_SSD_XML_SIZE) return -EINVAL;
++ *stage_status=0xffffffff;
++ sha256(encrypted,len,digest);
++ if (memcmp(digest,expected,sizeof(digest))) return -EKEYREJECTED;
++ ret=qcom_scm_superman_ssd_available();
++ if (ret<0) return ret;
++ if (ret!=3) return -EOPNOTSUPP;
++ buf=dma_alloc_coherent(__scm->dev,len,&phys,GFP_KERNEL);
++ if(!buf)return -ENOMEM;
++ if(phys>U32_MAX || len>U32_MAX-phys){ret=-EOVERFLOW;goto free;}
++ memcpy(buf,encrypted,len);
++ mutex_lock(&superman_ssd_lock);
++ ret=qcom_scm_clk_enable();if(ret)goto unlock;
++ ret=qcom_scm_bw_enable();if(ret)goto clocks;
++ /* Match the bounded growing-metadata protocol, without reading past input. */
++ for(md_len=128;md_len<=2048;md_len*=2){
++  desc.cmd=6;desc.arginfo=QCOM_SCM_ARGS(2,QCOM_SCM_VAL,QCOM_SCM_RW);
++  desc.args[0]=md_len;desc.args[1]=phys;
++  memset(&res,0,sizeof(res));
++  ret=qcom_scm_call(__scm->dev,&desc,&res);if(ret)goto bandwidth;
++  *stage_status=0x10000 | (u32)res.result[0];
++  if(res.result[0]!=6)break;
++ }
++ if(res.result[0]){ret=-EKEYREJECTED;goto bandwidth;}
++ /* No firmware-returned pointer is dereferenced without exact bounds. */
++ if(res.result[2]!=phys+SUPERMAN_SSD_XML_SIZE){ret=-ERANGE;goto bandwidth;}
++ ctx=res.result[1];
++ desc.cmd=7;desc.arginfo=QCOM_SCM_ARGS(4,QCOM_SCM_VAL,QCOM_SCM_VAL,QCOM_SCM_VAL,QCOM_SCM_RW);
++ desc.args[0]=ctx;desc.args[1]=1;desc.args[2]=len-SUPERMAN_SSD_XML_SIZE;desc.args[3]=phys+SUPERMAN_SSD_XML_SIZE;
++ memset(&res,0,sizeof(res));
++ ret=qcom_scm_call(__scm->dev,&desc,&res);if(ret)goto bandwidth;
++ *stage_status=0x20000 | (u32)res.result[0];
++ if(res.result[0]){ret=-EKEYREJECTED;goto bandwidth;}
++ *plain_len=len-SUPERMAN_SSD_XML_SIZE;
++ memcpy(plain,buf+SUPERMAN_SSD_XML_SIZE,*plain_len);
++ ret=0;
++bandwidth:qcom_scm_bw_disable();
++clocks:qcom_scm_clk_disable();
++unlock:mutex_unlock(&superman_ssd_lock);
++free:memzero_explicit(buf,len);dma_free_coherent(__scm->dev,len,buf,phys);
++ return ret;
++}
++EXPORT_SYMBOL_GPL(qcom_scm_superman_mba_decrypt);
++
+ int qcom_scm_pas_init_image(u32 peripheral, const void *metadata, size_t size,
+ 			    struct qcom_scm_pas_metadata *ctx)
+ {
