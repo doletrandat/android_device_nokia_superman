@@ -1,0 +1,2 @@
+# Standalone laboratory module only; not included in the product or boot image.
+obj-m += superman-reset-observer.o
