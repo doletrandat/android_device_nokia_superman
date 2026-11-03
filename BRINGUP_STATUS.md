@@ -22,8 +22,10 @@ The single-context IPv4 mobile-data backend is implemented and installed with
 rollback and exact file readbacks. Host sanitizer tests, native ARM tests,
 physical asynchronous WDS status/binding/client release and a 75-second modem/SMS
 soak passed. A fresh manually selected Android boot started it automatically.
-Framework data-list verification is still in progress: the first standalone
-helper could not bind because it lacked an Android app-process registration.
+A registered Android test app then passed the complete CellularDataService ->
+RIL -> Radio HAL roundtrip, reporting the true empty disconnected list. Normal
+audio/standby, Wi-Fi Internet and measured current also passed on that boot.
+The original standalone-helper failures remain preserved in local evidence.
 No successful carrier data session is claimed.
 
 Graphics work retained here includes historical candidates and diagnostics.

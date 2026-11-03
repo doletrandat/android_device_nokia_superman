@@ -220,3 +220,10 @@ configuration cleanup. Physical WDS binding, asynchronous status and client rele
 and a 75-second modem/SMS soak passed. Installation and framework qualification are
 recorded in PF34 STATUS and the handoff ledgers. Carrier traffic remains unqualified:
 the inserted SIM has not registered. No external call or message was sent by tests.
+
+PF34 cold13 qualification (2026-11-03): automatic startup and the normal registered
+Android app -> CellularDataService -> RIL -> Radio HAL data-list query passed on
+boot ea5f5b2d-4505-44ef-a142-771a8a9d70e8. The empty list matches the disconnected
+modem. Selected library e3f076032e2ecc0db8075f93067e2a696b2e7d3ae57df3e16f5aac9877ac03e6;
+Wi-Fi Internet, measured current, normal duplex audio and standby passed on this
+boot. No real carrier data session was started or qualified.
