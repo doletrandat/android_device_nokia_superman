@@ -1,0 +1,15 @@
+cc_library_shared {
+    name: "libsuperman_graphics_hal",
+    vendor_available: true,
+    srcs: ["superman_graphics_hal.cpp"],
+    export_include_dirs: ["."],
+    include_dirs: [
+        "hardware/interfaces/graphics/mapper/2.0/utils/hal/include",
+        "hardware/interfaces/graphics/mapper/2.0/utils/passthrough/include",
+        "hardware/interfaces/graphics/allocator/2.0/utils/hal/include",
+        "hardware/interfaces/graphics/allocator/2.0/utils/passthrough/include",
+    ],
+    shared_libs: ["android.hardware.graphics.allocator@2.0", "android.hardware.graphics.mapper@2.0", "libhardware", "libcutils", "libsync", "libbase", "libhidlbase", "liblog", "libutils"],
+    export_shared_lib_headers: ["android.hardware.graphics.allocator@2.0", "android.hardware.graphics.mapper@2.0", "libhardware"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
