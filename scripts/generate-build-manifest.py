@@ -64,7 +64,15 @@ def inspect_framework(path):
             raise ValueError('Framework CRC mismatch: ' + bad)
 
 
+def inspect_touch_transport(path):
+    """Reject a transport that silently ignores the board's init delay."""
+    data = path.read_bytes()
+    if not data.startswith(b'\x7fELF\x01\x01') or b'parmtype=startup_delay_ms:uint\0' not in data:
+        raise ValueError('Touch transport lacks the required startup_delay_ms parameter')
+
+
 def generate(template, system, identity, output):
+    inspect_touch_transport(system / COMPONENTS['touch_i2c_sha256'])
     inspect_framework(system / COMPONENTS['framework_res_sha256'])
     fields = {key: sha256(system / path) for key, path in COMPONENTS.items()}
     provenance = json.loads((system / COMPONENTS['touch_provenance_sha256']).read_text())

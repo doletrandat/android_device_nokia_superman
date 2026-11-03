@@ -8,6 +8,7 @@ import runpy
 import struct
 import subprocess
 import zlib
+import argparse
 
 ROOT = Path(__file__).resolve().parents[4]
 OUT = ROOT / '.codex-restart/builds/r37-cpu-control-20260923'
@@ -33,6 +34,16 @@ def module_table(option, path):
 
 
 def main():
+    global OUT, DEST
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--mode', choices=('control', 'clock'), default='control')
+    parser.add_argument('--output', type=Path, default=OUT)
+    parser.add_argument('--dest', type=Path, default=DEST)
+    args = parser.parse_args()
+    OUT, DEST = args.output.resolve(), args.dest.resolve()
+    require(args.mode != 'clock' or DEST != ROOT / 'handoff/evidence/r37-cpu-control-20260923',
+            'Clock experiment requires separate evidence directory')
+    DEST.mkdir(parents=True, exist_ok=True)
     baseline = BASE.read_bytes()
     require(sha(baseline) == '3926ea3dc1bc6bc129df6aa3f8ebbb906d2e8ab735067a3d847cbfc111bb4d58',
             'Proven boot hash drift')
@@ -42,6 +53,9 @@ def main():
     reference = (ROOT / 'handoff/evidence/r37-smp-investigation-20260920/captured-r37.config').read_text()
     embedded = (OUT / 'embedded.config').read_text()
     allowed = {'CONFIG_CC_CAN_LINK=y', '# CONFIG_DEBUG_INFO_SPLIT is not set'}
+    if args.mode == 'clock':
+        allowed |= {'# CONFIG_QCOM_CLK_APCS_MSM8916 is not set', 'CONFIG_QCOM_CLK_APCS_MSM8916=y'}
+        require('CONFIG_QCOM_CLK_APCS_MSM8916=y' in embedded.splitlines(), 'Clock driver disabled')
     delta = set(reference.splitlines()) ^ set(embedded.splitlines())
     require(delta <= allowed, 'Embedded control config drift: ' + repr(sorted(delta)))
     require(b'SUPERMAN_SMP' not in image, 'Unexpected markers in control')
@@ -100,6 +114,9 @@ def main():
               'image_sha256': sha(image), 'zimage_sha256': sha(zimage),
               'image_byte_equal_to_proven': image == zlib.decompress(old_z[old_z.index(b'\x1f\x8b\x08'):], 31),
               'dtb_sha256': sha(dtb), 'ramdisk_sha256': sha(ramdisk), 'modules': module_reports}
+    if args.mode == 'clock':
+        report['kind'] = 'isolated-apcs-clock-candidate'
+        report['configuration_delta'] = report.pop('config_metadata_delta')
     (DEST / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
     require(not failures, 'Module import CRC validation failed; see validation.json')
 
@@ -114,10 +131,12 @@ def main():
     masked = bytearray(nh)
     masked[8:12], masked[576:608] = header[8:12], header[576:608]
     require(bytes(masked) == header, 'Boot parameters changed')
-    dest = DEST / 'boot-control.img'
+    dest = DEST / ('boot-clock.img' if args.mode == 'clock' else 'boot-control.img')
     require(not dest.exists(), 'Refusing to overwrite control boot artifact')
     dest.write_bytes(boot)
     report.update(boot_control_sha256=sha(boot), boot_size=len(boot), boot_parameters_preserved=True)
+    if args.mode == 'clock':
+        report['boot_clock_sha256'] = report.pop('boot_control_sha256')
     (DEST / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
     dest.with_suffix('.img.sha256').write_text(sha(boot) + '  ' + dest.name + '\n')
     print(json.dumps(report, indent=2))

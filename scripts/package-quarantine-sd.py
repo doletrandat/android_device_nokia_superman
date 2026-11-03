@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Assemble and verify an r10-based full SD image in regular files only."""
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
 import runpy
+import re
 import shutil
 import stat
 import subprocess
@@ -42,6 +44,71 @@ def digest(path, offset=0, size=None):
     return result.hexdigest()
 
 
+def ramdisk_entries(compressed):
+    """Parse newc without extraction; reject malformed, duplicate or CRC-invalid entries."""
+    data = gzip.decompress(compressed)
+    entries, offset = {}, 0
+    while offset + 110 <= len(data):
+        header = data[offset:offset + 110]
+        require(header[:6] in (b'070701', b'070702'), 'Invalid ramdisk newc header')
+        fields = [int(header[6 + i * 8:14 + i * 8], 16) for i in range(13)]
+        size, namesize = fields[6], fields[11]
+        name_end = offset + 110 + namesize
+        require(namesize > 0 and name_end <= len(data), 'Invalid ramdisk name extent')
+        raw_name = data[offset + 110:name_end]
+        require(raw_name[-1:] == b'\0' and b'\0' not in raw_name[:-1], 'Invalid ramdisk name')
+        name = raw_name[:-1].decode('utf-8')
+        require(name not in entries, 'Duplicate ramdisk entry')
+        start = (name_end + 3) & ~3
+        end = start + size
+        require(end <= len(data), 'Truncated ramdisk payload')
+        payload = data[start:end]
+        require(not any(data[name_end:start]), 'Nonzero ramdisk name padding')
+        offset = (end + 3) & ~3
+        require(offset <= len(data) and not any(data[end:offset]), 'Invalid ramdisk payload padding')
+        if header[:6] == b'070702':
+            require(fields[12] == sum(payload) & 0xffffffff, 'Ramdisk CRC mismatch')
+        else:
+            require(fields[12] == 0, 'Unexpected newc checksum')
+        entries[name] = (header[:6], fields, payload)
+        if name == 'TRAILER!!!':
+            require(size == 0 and not any(data[offset:]), 'Invalid ramdisk trailer')
+            return entries
+    raise RuntimeError('Missing ramdisk trailer')
+
+
+def verify_ramdisk_modules(before, after, manifest):
+    require(hashlib.sha256(before).hexdigest() == manifest['before_ramdisk_sha256'],
+            'Ramdisk replacement baseline mismatch')
+    require(hashlib.sha256(after).hexdigest() == manifest['after_ramdisk_sha256'],
+            'Ramdisk replacement output mismatch')
+    old, new = ramdisk_entries(before), ramdisk_entries(after)
+    require(old.keys() == new.keys(), 'Ramdisk entry set changed')
+    modules = manifest['modules']
+    expected = {row['path']: row for row in modules}
+    require(modules and len(expected) == len(modules), 'Invalid module replacement set')
+    changed = []
+    for name in old:
+        omagic, ofields, opayload = old[name]
+        nmagic, nfields, npayload = new[name]
+        # Only payload length and its newc checksum may differ.
+        require(omagic == nmagic and all(ofields[i] == nfields[i]
+                for i in range(13) if i not in (6, 12)), 'Ramdisk metadata changed: ' + name)
+        if opayload == npayload:
+            continue
+        require(name in expected and re.fullmatch(r'lib/modules/[A-Za-z0-9_-]+\.ko', name),
+                'Unexpected ramdisk payload change: ' + name)
+        require(stat.S_ISREG(ofields[1]), 'Ramdisk module is not a regular file')
+        require(hashlib.sha256(opayload).hexdigest() == expected[name]['before_sha256'] and
+                hashlib.sha256(npayload).hexdigest() == expected[name]['after_sha256'],
+                'Ramdisk module replacement hash mismatch: ' + name)
+        require(len(npayload) >= 52 and npayload[:6] == b'\x7fELF\x01\x01' and
+                npayload[18:20] == b'\x28\x00', 'Expected ARM32 ramdisk module')
+        changed.append(name)
+    require(set(changed) == expected.keys(), 'Declared ramdisk replacement was not applied')
+    return changed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('base', 'boot', 'system', 'output', 'work'):
@@ -51,10 +118,16 @@ def main():
                         help='Allow a diagnostic zImage replacement while preserving ramdisk and boot parameters')
     parser.add_argument('--base-sha256', default=BASE_SHA,
                         help='Explicit expected hash for a separately verified base image')
+    parser.add_argument('--ramdisk-module-manifest', type=Path,
+                        help='Verify exact ARM32 module payload replacements; preserve all other ramdisk entries')
+    parser.add_argument('--extra-component-manifest', type=Path,
+                        help='Verify additional system paths against their exact expected hashes')
     args = parser.parse_args()
     for path in (args.base, args.boot, args.system):
         require(stat.S_ISREG(path.stat().st_mode), 'Input must be a regular file')
     require(not args.output.exists(), 'Refusing to overwrite an image')
+    layout = runpy.run_path(str(Path(__file__).with_name('verify-arm-boot-layout.py')))['verify_boot_layout'](args.boot.read_bytes())
+    require(layout['safe'], 'Unsafe ARM boot memory layout: ' + str(layout['error']))
     require(args.base.stat().st_size == IMAGE_SIZE and digest(args.base) == args.base_sha256,
             'Base image provenance mismatch')
     require(args.system.stat().st_size == P2_SIZE, 'System size mismatch')
@@ -79,13 +152,21 @@ def main():
     require(digest(baseline_boot) == helpers['BASE_SHA'], 'Embedded baseline boot mismatch')
     bh, bz, bd, br = helpers['split_boot'](baseline_boot.read_bytes())
     nh, nz, nd, nr = helpers['split_boot'](args.boot.read_bytes())
-    require(br == nr, 'Ramdisk changed')
+    ramdisk_replacements = []
+    if args.ramdisk_module_manifest:
+        replacement = json.loads(args.ramdisk_module_manifest.read_text())
+        require(replacement['boot_sha256'] == digest(args.boot), 'Ramdisk manifest boot mismatch')
+        ramdisk_replacements = verify_ramdisk_modules(br, nr, replacement)
+    else:
+        require(br == nr, 'Ramdisk changed')
     if args.allow_kernel_replacement:
         require(bz != nz, 'Diagnostic kernel replacement was not applied')
     else:
         require(bz == nz, 'Kernel executable changed')
     masked = bytearray(nh)
     masked[8:12], masked[576:608] = bh[8:12], bh[576:608]
+    if ramdisk_replacements:
+        masked[16:20] = bh[16:20]
     require(bytes(masked) == bh, 'Boot parameters changed')
     require(nd != bd and b'diagnostic-quarantine@f500000\0' in nd, 'Quarantine DTB missing')
     require(nh[576:608] == helpers['boot_id'](nz + nd, nr), 'Boot ID mismatch')
@@ -126,12 +207,39 @@ def main():
     for key in ('touch_core_sha256', 'touch_i2c_sha256'):
         require(touch[key] == fields[key], 'Touch module provenance mismatch: ' + key)
     framework_check = runpy.run_path(str(Path(__file__).with_name('generate-build-manifest.py')))
+    framework_check['inspect_touch_transport'](work / 'rmi_i2c.ko')
     power = json.loads((work / 'superman-power-modules.json').read_text())
     require(power['boot_sha256'] == digest(args.boot), 'Power module boot ABI mismatch')
     for key in ('reboot_mode_sha256', 'qcom_pon_sha256', 'pwrkey_sha256'):
         require(power[key] == fields[key], 'Power module provenance mismatch: ' + key)
     framework_check['inspect_framework'](work / 'framework-res.apk')
     (work / 'manifest.txt').write_text(manifest)
+    extra_hashes, extra_symlinks = {}, {}
+    if args.extra_component_manifest:
+        extras = json.loads(args.extra_component_manifest.read_text())
+        require(extras['identity'] == args.identity and extras['boot_sha256'] == digest(args.boot),
+                'Extra component manifest identity/boot mismatch')
+        for index, row in enumerate(extras['files']):
+            filename = row['image_path']
+            require(re.fullmatch(r'system/[A-Za-z0-9_./+@-]+', filename) and
+                    '..' not in Path(filename).parts and filename not in extra_hashes,
+                    'Invalid or duplicate extra component path')
+            target = work / ('extra-' + str(index))
+            debugfs(args.system, 'dump ' + filename + ' ' + str(target))
+            require(target.is_file() and digest(target) == row['sha256'],
+                    'Extra component mismatch: ' + filename)
+            extra_hashes[filename] = digest(target)
+        for row in extras.get('symlinks', []):
+            filename, target = row['image_path'], row['target']
+            require(re.fullmatch(r'system/[A-Za-z0-9_./+@-]+', filename) and
+                    '..' not in Path(filename).parts and filename not in extra_hashes and
+                    filename not in extra_symlinks and
+                    re.fullmatch(r'[A-Za-z0-9_.+-]+', target) and target not in ('.', '..'),
+                    'Invalid extra component symlink')
+            info = debugfs(args.system, 'stat ' + filename)
+            require('Type: symlink' in info and 'Fast link dest: "' + target + '"' in info,
+                    'Extra component symlink mismatch: ' + filename)
+            extra_symlinks[filename] = target
     # Reject the known missing-JNI startup regression before assembling an image.
     required_hashes = {}
     for filename in ('system/lib/librs_jni.so', 'system/bin/superman-healthdiag',
@@ -175,6 +283,10 @@ def main():
                   boot_sha256=digest(extracted_boot), p1_sha256=digest(extracted_p1),
                   dtb_sha256=helpers['sha'](nd), identity=args.identity,
                   required_component_hashes=required_hashes,
+                  extra_component_hashes=extra_hashes,
+                  extra_component_symlinks=extra_symlinks,
+                  ramdisk_module_replacements=ramdisk_replacements,
+                  boot_memory_layout=layout,
                   prefix_and_data_preserved=True, partition_readbacks_match=True)
     (work / 'verification.json').write_text(json.dumps(report, indent=2) + '\n')
     args.output.with_suffix('.img.sha256').write_text(report['image_sha256'] + '  ' + args.output.name + '\n')
