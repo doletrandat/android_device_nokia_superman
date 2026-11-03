@@ -47,3 +47,8 @@ mainline DRM kernel.
 Evidence: `.codex-restart/artifacts/p150-mesa-current-upgrade-20261028` and
 `.codex-restart/artifacts/p151-mesa26-presentation-20261029`. Deployment and human
 feedback are separate from source/build validation in those records.
+
+Public Git checkpoints retain the recipes, source URLs, digests and patches.
+Downloaded `upstream/` archives, host tools and compiled `prebuilt/` libraries
+are local inputs excluded from Git. Restore them from the recorded provenance
+before running the recipe; the public checkout alone is not a packaged payload.
