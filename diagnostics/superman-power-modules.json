@@ -1,16 +1,2996 @@
 {
   "schema_version": 1,
-  "scope": "Lumia 730 MSM8226; preserved r33/r34/r35 boot only",
-  "boot_sha256": "3926ea3dc1bc6bc129df6aa3f8ebbb906d2e8ab735067a3d847cbfc111bb4d58",
+  "scope": "Lumia 730 Superman MSM8226; r37 SMP sourcefix kernel",
+  "boot_sha256": "a4ada7b9e6ef7c478eb5f465bdb2fb4f3669f1b83004ba02da3b5e5c13561f00",
   "source_commit": "b75aff58cd0646da93b98e0482f99b723ff0776c",
-  "captured_config_sha256": "523d7334a8e0f9e6bbebaa06065892487b99310d06f525b10d001b2a3a9e3652",
+  "captured_config_sha256": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
   "compiler": "GCC 13.3.0-6ubuntu2~24.04, binutils 2.42",
-  "module_layout_crc": "0x71e4016d",
+  "module_layout_crc": "0x041689d5",
   "distinct_imports_checked": 44,
-  "reboot_mode_sha256": "61a297813fee8a47aee7b67aafe670614251f685d4306849ccba4bc1c4f75f26",
-  "qcom_pon_sha256": "967d6f8b208605cf142e71c8f8875feaa8929f2ee4fd5319d7bf3abe29b05f56",
-  "pwrkey_sha256": "1eca7157065b83a212db0857b5b6f1b1df646ff759f037527272f600d277b353",
-  "load_order": ["reboot-mode", "qcom-pon", "pm8941-pwrkey"],
+  "reboot_mode_sha256": "6343f48feaa946b6ed4a55af4f14b870a2e1cd79d925275d8abe04cb85b03c66",
+  "qcom_pon_sha256": "c98c34b812557bbe01677bcf4412e9e44f1476dee897d6a3daaa724742b1a508",
+  "pwrkey_sha256": "40ba286e40f0ba3da2c4711928550e3a3022e29dfb68cce8316bcc738d95ebef",
+  "load_order": [
+    "reboot-mode",
+    "qcom-pon",
+    "pm8941-pwrkey"
+  ],
   "runtime_result": "pending-device-test",
-  "evidence": "handoff/evidence/r35-input-fix-20260920"
+  "evidence": "handoff/evidence/r35-input-fix-20260920",
+  "kernel_image_sha256": "95fe77a94a61ad50ff8588f4eb1e2154d407872c291a7928b8a5efb29ffa942d",
+  "candidate": "v70-graphicsdiag-r37-smp-p78-gpu-sync-20261021",
+  "p17_abi_verification": "all module imports checked against P17 Module.symvers and selected module exports",
+  "p18_abi_verification": "all module imports checked against P18 Module.symvers and selected module exports",
+  "p19_module_import_validation": "1218 imports across 10 modules match this kernel",
+  "hardware_tested": false,
+  "p19b_module_import_validation": "1218 imports across 10 modules match this kernel",
+  "p20_module_import_validation": "1218 imports across 10 modules match this kernel",
+  "p21_module_import_validation": "Retained P20 kernel; 1218 imports across 10 modules rechecked",
+  "p23_module_import_validation": "1218 imports across 10 modules checked against P23",
+  "p25_module_import_validation": "1218 imports across 10 modules checked against P25",
+  "p26_module_import_validation": "1218 imports across 10 modules checked against P26; 709 msm imports also checked against P24 provider table",
+  "package_scope": "P75 constant-footprint/sysval register corrections and bounded no-op bootanim wait; exact inherited P74 trace/boot/kernel/native latch retained",
+  "prior_boot_sha256": "64aa11320a3047be05f5a74922616acdb8eb8cd51b0656d44ba6e8c07f122f97",
+  "prior_package_identity": "v70-graphicsdiag-r37-smp-p77-touch-delay-20261020",
+  "p54_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p54-render-matrix-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "aaa9e9e3050f9643f92f235929aad6060feca81a4d95f59fdfa04273ec42aa0f",
+    "size": 137556,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "loaded": false,
+    "hardware_tested": false,
+    "read_only": true,
+    "no_charging_policy_change": true
+  },
+  "p55_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p54-render-matrix-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "aaa9e9e3050f9643f92f235929aad6060feca81a4d95f59fdfa04273ec42aa0f",
+    "size": 137556,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "loaded": false,
+    "hardware_tested": false,
+    "read_only": true,
+    "no_charging_policy_change": true
+  },
+  "p56_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p56-sf-timing-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false
+  },
+  "p57_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p57-sf-guard-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p56-sf-timing-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p58_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p58-sf-client-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p57-sf-guard-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p59_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p59-sf-layers-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p58-sf-client-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p60_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": ".codex-restart/artifacts/r37-p60-overlay-dequeue-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": ".codex-restart/artifacts/r37-p59-sf-layers-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p61_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": ".codex-restart/artifacts/r37-p60-overlay-dequeue-20261009/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": ".codex-restart/artifacts/r37-p59-sf-layers-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p62_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p62-bounded-churn-20261010/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p61-guarded-ui-20261009/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p63_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p63-gpu-init-diag-20261010/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p62-bounded-churn-20261010/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false
+  },
+  "p64_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p63-gpu-init-diag-20261010/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p63-gpu-init-diag-20261010/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false,
+    "inherited_byte_identical_native_module": true
+  },
+  "p65_charge_observer": {
+    "passed": true,
+    "ARM32": true,
+    "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p63-gpu-init-diag-20261010/compiled/superman-charge-observer.ko",
+    "sha256": "fd5fcb1da56ac807a35a650cb90449f6a9159187957946613c2573f4c904e318",
+    "size": 139444,
+    "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 ",
+    "all_import_crcs_match": true,
+    "imports": [
+      {
+        "name": "mutex_lock",
+        "crc": 2190272187,
+        "matched": true
+      },
+      {
+        "name": "strcmp",
+        "crc": 3805619546,
+        "matched": true
+      },
+      {
+        "name": "mutex_unlock",
+        "crc": 2518216160,
+        "matched": true
+      },
+      {
+        "name": "dev_get_regmap",
+        "crc": 683876265,
+        "matched": true
+      },
+      {
+        "name": "ktime_get_with_offset",
+        "crc": 3304118802,
+        "matched": true
+      },
+      {
+        "name": "scnprintf",
+        "crc": 827007176,
+        "matched": true
+      },
+      {
+        "name": "regmap_read",
+        "crc": 3401917723,
+        "matched": true
+      },
+      {
+        "name": "__stack_chk_fail",
+        "crc": 4043175627,
+        "matched": true
+      },
+      {
+        "name": "__aeabi_unwind_cpp_pr0",
+        "crc": 4023832326,
+        "matched": true
+      },
+      {
+        "name": "put_device",
+        "crc": 1897457869,
+        "matched": true
+      },
+      {
+        "name": "of_machine_compatible_match",
+        "crc": 3808283792,
+        "matched": true
+      },
+      {
+        "name": "of_find_compatible_node",
+        "crc": 740686133,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_available",
+        "crc": 805170511,
+        "matched": true
+      },
+      {
+        "name": "of_device_is_compatible",
+        "crc": 762926585,
+        "matched": true
+      },
+      {
+        "name": "of_property_read_variable_u32_array",
+        "crc": 1356281889,
+        "matched": true
+      },
+      {
+        "name": "of_find_device_by_node",
+        "crc": 1912635079,
+        "matched": true
+      },
+      {
+        "name": "_printk",
+        "crc": 2459533016,
+        "matched": true
+      },
+      {
+        "name": "module_layout",
+        "crc": 3821287456,
+        "matched": true
+      }
+    ],
+    "source_sha256": "9b251a4932fdf07b3de441a1e2afcd38138a04aa6357852aeca7622a122e0c24",
+    "core_and_subtype_registers": 31,
+    "extended_statuses": 5,
+    "extended_requires_SMBBP_subtypes": [
+      49,
+      50,
+      52,
+      55
+    ],
+    "read_only": true,
+    "no_charging_policy_change": true,
+    "hardware_tested": false,
+    "inherited_from": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/r37-p63-gpu-init-diag-20261010/charge-module-validation.json",
+    "external_module_not_rebuilt": true,
+    "P56_loaded_and_read_hardware": true,
+    "charging_fix": false,
+    "inherited_byte_identical_native_module": true
+  },
+  "config_sha256": "711580ab80f63c7ccb7fe216e0772659673dca158f5182a89de1ff700e5cfd02",
+  "module_abi_validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf22-audio-bootstrap-20261019/validation/MODULE-ABI.json",
+  "pf28_config_qualification": {
+    "prior_config_sha256": "89bd417800f732e8c20f426290b63105120b821ecc100f5b43dc8d3650931b9d",
+    "current_config_sha256": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
+    "config_changes": [
+      "CONFIG_CPU_THERMAL=y",
+      "CONFIG_CPU_FREQ_THERMAL=y",
+      "CONFIG_SCHED_HW_PRESSURE=y"
+    ],
+    "actual_import_CRCs_verified": 2757,
+    "kernel_image_sha256": "c3121a278c7bcf7ee27a072628eb91ee22def22574fc32e1a9856f9b8442c13a",
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf28-system-usability-apply-20261029/MODULE-ABI-CORRECTED.json",
+    "selected_modules": 34,
+    "native_msm_same_source_ABI_rebuild_sha256": "7853418bd1ebe00210238203d728bcbd24a8fd6d01eaa496f04d0d9521cc6017",
+    "inactive_legacy_msm_preserved_incompatible": "/vendor/lib/modules/gpu-diag/msm.ko",
+    "initial_validation_superseded": "MODULE-ABI.json used stale vmlinux.symvers; rejected by actual kernel; current Module.symvers verified against linked ELF"
+  },
+  "pf29_ssd_decryption": {
+    "boot_sha256": "2672daefd83a1798eb2e837db15506f37cdd2961689491277aac5a3662f457dc",
+    "kernel_notes_sha256": "ddb40333a2e97af59dd11263ec7fe672a57c70a44d7fcb3754daee7916d8efff",
+    "config_unchanged": true,
+    "previous_module_CRCs_unchanged": true,
+    "selected_modules": 34,
+    "import_CRCs": 2757,
+    "scope": "exact-board exact-stock-MBA secure-world SSD helper only; no modem startup",
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/KERNEL-ABI-DELTA.json"
+  },
+  "pf29_modem_manual_bringup": {
+    "boot_sha256": "2b311cdbca1b860252b4c11de02c61269ea6f339f88018dd908141d8fd6d0bc7",
+    "kernel_notes_sha256": "ddb40333a2e97af59dd11263ec7fe672a57c70a44d7fcb3754daee7916d8efff",
+    "config_unchanged": true,
+    "previous_module_CRCs_unchanged": true,
+    "selected_modules": 35,
+    "import_CRCs": 2849,
+    "scope": "manual-only modem remoteproc, original firmware, enabled MBA/MPSS no-map reservations; audio FDT must be independently reacquired on first boot",
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/KERNEL-ABI-DELTA.json"
+  },
+  "pf29_mpss_segment_ssd": {
+    "boot_sha256": "bff2d3eef660449cb495af83f314f19831c4d53a7c337195d333613ee04735fc",
+    "kernel_notes_sha256": "26f8016edc452a72b4b85e83754ca770c25439f358e39c28fa1b6a25cfc1bac1",
+    "config_DT_ramdisk_unchanged": true,
+    "previous_module_CRCs_unchanged": true,
+    "shipped_selected_module_files": 35,
+    "shipped_imports": 2849,
+    "manual_decryption_test_module_imports": 20,
+    "physical_decryption_pending": true,
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/segment-ssd/ALL-ABI.json"
+  },
+  "pf29_mpss_plaintext_qualification": {
+    "boot_id": "862daa1d-decd-4427-a082-d4cce7d776c7",
+    "sha256": "68b1f88e06e4caa2600249581725ce0b0a7c5285c24bfff9f742d691c5c19c64",
+    "original_encrypted_sha256": "9a8a3978ccc705a249228972945ef7e97eebad3f5e342c863330d74801ba3cf5",
+    "all_19_signed_segment_hashes_match": true,
+    "all_other_bytes_unchanged": true,
+    "normal_TZ_SSD_decryption": true,
+    "modem_runtime_pending": true,
+    "evidence": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/segment-ssd/runtime/RESULT.json"
+  },
+  "pf29_rmtfs_manual": {
+    "boot_sha256": "b0fba1a2109fe0ec60823ada17b9093a6dc71368a79e3cb210dc0553907091d1",
+    "kernel_notes_sha256": "26f8016edc452a72b4b85e83754ca770c25439f358e39c28fa1b6a25cfc1bac1",
+    "kernel_config_ramdisk_unchanged": true,
+    "four_new_DT_properties": true,
+    "shared_memory_reserved_bytes": 1048576,
+    "SD_baselines_read_only_writes_RAM_only": true,
+    "previous_module_CRCs_unchanged": true,
+    "shipped_selected_module_files": 35,
+    "shipped_imports": 2849,
+    "manual_decryption_test_module_imports": 20,
+    "RMTFS_hardware_qualification_pending": true,
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/rmtfs/ALL-ABI.json"
+  },
+  "pf29_rmtfs_2m": {
+    "boot_sha256": "7e37f3a89a561882bdeac9aa8127d746d049f8103f324fbcefb378c1342c671b",
+    "kernel_notes_sha256": "26f8016edc452a72b4b85e83754ca770c25439f358e39c28fa1b6a25cfc1bac1",
+    "kernel_config_ramdisk_unchanged": true,
+    "four_new_DT_properties": true,
+    "shared_memory_reserved_bytes": 2097152,
+    "actual_modem_request_bytes": 1572864,
+    "first_1MiB_allocation_failure_preserved": true,
+    "SD_baselines_read_only_writes_RAM_only": true,
+    "previous_module_CRCs_unchanged": true,
+    "shipped_selected_module_files": 35,
+    "shipped_imports": 2849,
+    "manual_decryption_test_module_imports": 20,
+    "RMTFS_hardware_qualification_pending": true,
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/rmtfs-2m/ALL-ABI.json"
+  },
+  "pf29_rmtfs_stock_RFS0": {
+    "boot_sha256": "cb04a3c2583dc1a9a4a5214d2ed18ff25158db023d43fd52ea18210eecf77689",
+    "kernel_notes_sha256": "26f8016edc452a72b4b85e83754ca770c25439f358e39c28fa1b6a25cfc1bac1",
+    "kernel_config_ramdisk_unchanged": true,
+    "seven_expected_reserved_DT_properties": true,
+    "shared_memory_reserved_bytes": 1572864,
+    "stock_ACPI_HID": "QCOM2423",
+    "stock_RFS_range": "0x0fd80000+0x180000",
+    "quarantine_bytes_preserved": true,
+    "actual_modem_request_bytes": 1572864,
+    "first_1MiB_allocation_failure_preserved": true,
+    "SD_baselines_read_only_writes_RAM_only": true,
+    "previous_module_CRCs_unchanged": true,
+    "shipped_selected_module_files": 35,
+    "shipped_imports": 2849,
+    "manual_decryption_test_module_imports": 20,
+    "RMTFS_hardware_qualification_pending": true,
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf29-complete-phone-20261030/rmtfs-stockmap/ALL-ABI.json"
+  },
+  "pf31_audio_board_power_DT": {
+    "boot_sha256": "108db4b49cc17fcc0eac23aaa2d64c7621878ba4fec49582e9863a807f85902e",
+    "expected_running_FDT_sha256": "d721095e5eec1351ac17cd7a1fb3ef81b03ba8bd6818e22bca6cd953f3a4ca51",
+    "kernel_notes_sha256": "26f8016edc452a72b4b85e83754ca770c25439f358e39c28fa1b6a25cfc1bac1",
+    "config_unchanged": true,
+    "zimage_and_ramdisk_unchanged": true,
+    "original_baseline_DT_properties_unchanged": true,
+    "failed_native_DT_properties_removed": true,
+    "DT_added_properties": 4,
+    "selected_existing_module_files": 36,
+    "existing_import_CRCs": 2924,
+    "native_files": 88,
+    "audio_power_auto_enabled": false,
+    "hardware_status": "pending physical Android boot; prior two PCM tones were silent",
+    "source_files": {
+      "device/nokia/superman/audio/pf31/codec/Makefile": "a6211e2af7991fd052a166d3f943192c57fd82ece0ec4f67de769a4cf0485b59",
+      "device/nokia/superman/audio/pf31/codec/core.c": "02928cd57d6bf866781cdafb4a8ed8e829b7a31770ff2039dc029f2bce7e306d",
+      "device/nokia/superman/audio/pf31/codec/messaging.c": "1dc5ca41f96d01bc8c6d6e92952bd6319589f3dde2a6185cc0cf038fcdcecfab",
+      "device/nokia/superman/audio/pf31/codec/sched.c": "13a2b94cc215de7fcf0bb220a3c511e069bc277466986d6eed1ebfc50e893568",
+      "device/nokia/superman/audio/pf31/codec/stream.c": "20576bf7fa11b4932670ac232d1a0ae3c0ce1247b82dd3cfe29a7891468b2141",
+      "device/nokia/superman/audio/pf31/codec/slimbus.h": "6becb12f4dad556073e514dac77ef9e2a1e512459db338088a8934837a04aab6",
+      "device/nokia/superman/audio/pf31/codec/slim-qmi-contract.h": "568696915c0983d9ce72cf4ee27cc9665700955491deb20417031db828ea8054",
+      "device/nokia/superman/audio/pf31/codec/superman-codec.h": "9e88ecb8038ef1170ba49134be059ee7b364739bcd8632ae72553fe2e20ab547",
+      "device/nokia/superman/audio/pf31/codec/codec-sequence.h": "9a434d5f1576170460a4c3af0d082933ffde91b879dea554c0a30883edfdb6a7",
+      "device/nokia/superman/audio/pf31/codec/lineout-program.h": "3064647041ecc6b9ab38dc4962be4bb4de6e7be9223fe26a0ef48875d4ca8d0e",
+      "device/nokia/superman/audio/pf31/codec/superman_wcd9302_reset.c": "cd0df3b1882f865b5542ed2dee8c265a8335532a6d9e2926cd4b8b06a2b0bc06",
+      "device/nokia/superman/audio/pf31/codec/superman_slim_pio.c": "d786f2bf9dd0b34edbc4c8ff7f6b7cef6702774a77e991899e15091608e6e9bc",
+      "device/nokia/superman/audio/pf31/codec/superman_amp.c": "89fbc9df85b2cdb87acddab7a16fcef42e4a04dafbfc659a8807f749d96762bd",
+      "device/nokia/superman/audio/pf31/codec/superman_wcd9302.c": "8c56f3a56bca29fbe15cf55345f43b8a814da5347778136e0b30f012c5f31d46",
+      "device/nokia/superman/audio/pf31/codec/superman_lineout_check.c": "2c73a8dc11d8f3d00fb173ec8aba4a1f1a9b3a1af042e2cae3ab9a77039f4692",
+      "device/nokia/superman/audio/pf31/codec/superman_audio_power_read.c": "1d05b8fe803f581d9863c0744dba3358637db90e5aadc3fde23390634d7b6538",
+      "device/nokia/superman/audio/pf31/codec/superman_audio_board_power.c": "e128cbecbddd56127dac9df3f1113b5f72dbb32fac15b0bb137226dc9c9ad1b2",
+      "device/nokia/superman/audio/pf31/dsp/Makefile": "def07a7f1f7e8a049dd7d6f5c7570d2d44fdd4562939af35b61c60d0738b1bae",
+      "device/nokia/superman/audio/pf31/dsp/apr.c": "11b5392939160fd48649e7f812d5f4014c1b7cef11fc0b93fa2ac0748d83967e",
+      "device/nokia/superman/audio/pf31/dsp/q6core.c": "1ec3b1700c8fc4c9b717d4bb10f0bd793803ff0b8bd5ef007e455a1cb7c439ac",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-common.c": "6690240cd1d4dab753fcf7fcc6cc5cbcd4fb2920784440ce779d0468ec09e0d0",
+      "device/nokia/superman/audio/pf31/dsp/q6afe.c": "7efeae2b411e4161ad91f946ac9d20988aeb4db7698428dde1efa94ff2f28ce1",
+      "device/nokia/superman/audio/pf31/dsp/q6asm.c": "6675daa9457608a91003d9f73f96ca57bd42227a524ca40227334453141c9513",
+      "device/nokia/superman/audio/pf31/dsp/q6adm.c": "df9042b9d11bb0dc796324dddc5a834beb13639218763fc1a5dcbc2f97ba37b8",
+      "device/nokia/superman/audio/pf31/dsp/superman-speaker-tone.c": "42b44fa910d73a16f1ee22beed7756d9e3e6eea547d4bd6adbefb2e55f846b2c",
+      "device/nokia/superman/audio/pf31/dsp/q6afe.h": "7e9fe7853733e301cbaca85da984d1fb00324f1749e69efb226c777f1765bb9f",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-common.h": "8936918ddb66a11bfa16c5ded079b5c4319581535fda34a7753063fe40290b38",
+      "device/nokia/superman/audio/pf31/dsp/q6asm.h": "df4f5eeb94be3486d41358c62f5df4eef190efa008a611c07d0e3398ac55b1bc",
+      "device/nokia/superman/audio/pf31/dsp/q6adm.h": "772259a6a47d0ee2b038208d93f9ba78632f1fc8a7d22a01434ae22752634950",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-errno.h": "5b29067b646bd22e242a1e709c06a1976129526132a84123b3bf07a526f0c86d",
+      "device/nokia/superman/audio/pf31/dsp/q6core.h": "c894805c88754627997aa7c2ab81a55b19cf72338bbd3d21f6f2a8d2f306f4b7",
+      "device/nokia/superman/audio/pf31/dsp/superman-codec.h": "9e88ecb8038ef1170ba49134be059ee7b364739bcd8632ae72553fe2e20ab547",
+      "device/nokia/superman/audio/pf31/README.md": "e1530297eaa00561a89f76ac3300c8e471eebb12dbc889f6296bd179ff8b4cc6",
+      "device/nokia/superman/audio/board-power.dtsi": "27f8a32397b201d403dcc9e33bbc5a547851543c8cd0c51ed645fba9456c006e"
+    },
+    "validation": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/audio-rpm-dt-candidate/VALIDATION.json",
+    "provider": "RPM L25",
+    "supersedes_native_L25_boot": "b5ef27d674742f625bf9e5de21d9597f33ac7d45c5048ed3ca410275a027b114"
+  },
+  "pf31_android_audio": {
+    "boot_id_at_install": "bfb8f1bb-1fa6-48d9-aeaa-b707df66d0ca",
+    "source_files": {
+      "device/nokia/superman/audio/pf31/README.md": "7889d7257e970e9c4dd63bbb5df587abe980dcca138f081a3ea5ead4a3a47fb7",
+      "device/nokia/superman/audio/pf31/hal/audio_hw.c": "1694005728619f888cbaf2f988bb3f51ea120585ae35901ec58a84cf90daf9a4",
+      "device/nokia/superman/audio/pf31/pcm/superman-pcm.c": "505e0720476bdedec3f3cf074ba72ed50e28a30767bfc0d48506f8cb75d7f06b",
+      "device/nokia/superman/audio/pf31/pcm/Makefile": "d07dffabd0388a4738568be39a7903d76cbb27d2ce683684bceb662a252d7309",
+      "device/nokia/superman/audio/pf31/codec/slim-qmi-contract.h": "568696915c0983d9ce72cf4ee27cc9665700955491deb20417031db828ea8054",
+      "device/nokia/superman/audio/pf31/codec/stream.c": "20576bf7fa11b4932670ac232d1a0ae3c0ce1247b82dd3cfe29a7891468b2141",
+      "device/nokia/superman/audio/pf31/codec/superman_slim_pio.c": "a339961c479f03bd83cb42f791c501bc967796b0b55c543f1367f3e500422c3a",
+      "device/nokia/superman/audio/pf31/codec/superman_wcd9302_reset.c": "cd0df3b1882f865b5542ed2dee8c265a8335532a6d9e2926cd4b8b06a2b0bc06",
+      "device/nokia/superman/audio/pf31/codec/superman_audio_board_power.c": "377911e48e8371201e7c077a1fe1fd0e7a8326f730fbec2a32062f39184b7f58",
+      "device/nokia/superman/audio/pf31/codec/superman_amp.c": "9bb15d41609b0e2e0d46d25ab0bd534a5c5a098099934a928120bce5a5664ede",
+      "device/nokia/superman/audio/pf31/codec/superman_amp_probe.c": "13fe372cb7553841bd95a7bd2ea5dd84292474a212c9f4085bbfd4df1205a583",
+      "device/nokia/superman/audio/pf31/codec/slimbus.h": "6becb12f4dad556073e514dac77ef9e2a1e512459db338088a8934837a04aab6",
+      "device/nokia/superman/audio/pf31/codec/core.c": "02928cd57d6bf866781cdafb4a8ed8e829b7a31770ff2039dc029f2bce7e306d",
+      "device/nokia/superman/audio/pf31/codec/superman_amp_smoke.c": "9ac99438299b1cdac3d78019a164eeb687719d0363710b87483fc37483762d42",
+      "device/nokia/superman/audio/pf31/codec/codec-sequence.h": "9a434d5f1576170460a4c3af0d082933ffde91b879dea554c0a30883edfdb6a7",
+      "device/nokia/superman/audio/pf31/codec/messaging.c": "1dc5ca41f96d01bc8c6d6e92952bd6319589f3dde2a6185cc0cf038fcdcecfab",
+      "device/nokia/superman/audio/pf31/codec/superman_pmic_pinconf.c": "6f1231fdacd2583e087e6f7e06da53811aab74b710513e4e04b3fbac8d500fe7",
+      "device/nokia/superman/audio/pf31/codec/Makefile": "a6211e2af7991fd052a166d3f943192c57fd82ece0ec4f67de769a4cf0485b59",
+      "device/nokia/superman/audio/pf31/codec/sched.c": "13a2b94cc215de7fcf0bb220a3c511e069bc277466986d6eed1ebfc50e893568",
+      "device/nokia/superman/audio/pf31/codec/superman-codec.h": "9e88ecb8038ef1170ba49134be059ee7b364739bcd8632ae72553fe2e20ab547",
+      "device/nokia/superman/audio/pf31/codec/superman_audio_power_read.c": "1d05b8fe803f581d9863c0744dba3358637db90e5aadc3fde23390634d7b6538",
+      "device/nokia/superman/audio/pf31/codec/superman_wcd9302.c": "90a3ebe97a20963c8bec2cfbb579d0125d16d6d835a89cf74c8b011ae8af1eac",
+      "device/nokia/superman/audio/pf31/codec/superman_lineout_check.c": "2c73a8dc11d8f3d00fb173ec8aba4a1f1a9b3a1af042e2cae3ab9a77039f4692",
+      "device/nokia/superman/audio/pf31/codec/lineout-program.h": "93b78a62ad9a5d99b06ba7b78bbd808d8d55fbbdbc99a7125119fcd6eff1c401",
+      "device/nokia/superman/audio/pf31/dsp/q6afe.h": "7e9fe7853733e301cbaca85da984d1fb00324f1749e69efb226c777f1765bb9f",
+      "device/nokia/superman/audio/pf31/dsp/q6adm.c": "df9042b9d11bb0dc796324dddc5a834beb13639218763fc1a5dcbc2f97ba37b8",
+      "device/nokia/superman/audio/pf31/dsp/superman-speaker-tone.c": "fb6369c2e7dbfedb4e7034f133f0ed0cb80d2e5a63c65253c67386a8935ab6ce",
+      "device/nokia/superman/audio/pf31/dsp/q6pcm-smoke.c": "a7ab375462bc785e0243e732fce343c974aae99bd31938c200675a337c78681c",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-common.h": "8936918ddb66a11bfa16c5ded079b5c4319581535fda34a7753063fe40290b38",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-errno.h": "5b29067b646bd22e242a1e709c06a1976129526132a84123b3bf07a526f0c86d",
+      "device/nokia/superman/audio/pf31/dsp/q6mem-smoke.c": "907064ba1d4b86411cebd1c1a4aa5a6377aef0b2c6d923a41e16fe22f0f30f98",
+      "device/nokia/superman/audio/pf31/dsp/afe-slim-smoke.c": "2c0474ee9aacf02fd0f728df7a137fca1c44f0b99a4138a5ee54e1fc236f2ac2",
+      "device/nokia/superman/audio/pf31/dsp/q6core.c": "1ec3b1700c8fc4c9b717d4bb10f0bd793803ff0b8bd5ef007e455a1cb7c439ac",
+      "device/nokia/superman/audio/pf31/dsp/q6speaker-smoke.c": "911bdacdb9fd5e1ffed3c18db5b2d4f7bd7f358e79c77c7bdc06e13243214ed8",
+      "device/nokia/superman/audio/pf31/dsp/q6dsp-common.c": "6690240cd1d4dab753fcf7fcc6cc5cbcd4fb2920784440ce779d0468ec09e0d0",
+      "device/nokia/superman/audio/pf31/dsp/q6adm.h": "772259a6a47d0ee2b038208d93f9ba78632f1fc8a7d22a01434ae22752634950",
+      "device/nokia/superman/audio/pf31/dsp/apr.c": "2dd521f15071df23ebd3cd7521f224390576b5b6398c71ebf355c1e401756106",
+      "device/nokia/superman/audio/pf31/dsp/q6mem-recover.c": "f472d353582b43b8986ea5d95dc684374bbbad6f16de4d36ef73e872683663b7",
+      "device/nokia/superman/audio/pf31/dsp/Makefile": "def07a7f1f7e8a049dd7d6f5c7570d2d44fdd4562939af35b61c60d0738b1bae",
+      "device/nokia/superman/audio/pf31/dsp/q6asm.h": "d7c80cf8e67c5f422095d55992209a0ba4b9e9a4909281440d0d8fe74ffac094",
+      "device/nokia/superman/audio/pf31/dsp/q6asm.c": "f29844ab2218f22757e2f422061dae254d23995bdd4e4bd8b4531f2050b930dd",
+      "device/nokia/superman/audio/pf31/dsp/q6pipe-smoke.c": "6c7c01c266c04629c0a12cb5eed6ca7bd84cdf4b2020dcef8466896eebd07308",
+      "device/nokia/superman/audio/pf31/dsp/superman-codec.h": "9e88ecb8038ef1170ba49134be059ee7b364739bcd8632ae72553fe2e20ab547",
+      "device/nokia/superman/audio/pf31/dsp/q6afe.c": "7efeae2b411e4161ad91f946ac9d20988aeb4db7698428dde1efa94ff2f28ce1",
+      "device/nokia/superman/audio/pf31/dsp/core-smoke.c": "2d8129d2b3dd7c811730cf4e289ae34b52f48132d56f453873c25401d1273f83",
+      "device/nokia/superman/audio/pf31/dsp/q6core.h": "c894805c88754627997aa7c2ab81a55b19cf72338bbd3d21f6f2a8d2f306f4b7",
+      "device/nokia/superman/audio/superman-audio-core.sh": "394626539d7cb07f38c4d7cef14729a2f0d0317777e5cebd8b25c1aae932d80b",
+      "device/nokia/superman/audio/superman-audio-core.rc": "4f96e6664305f6e80535b389a631574fcf3573755917a45015d4272c1fbed6fa",
+      "device/nokia/superman/audio/superman-audio-playback.sh": "9053b321e04e63c5beefeb925add06548a79aea438425de77e16bfa9fc9cb9f8",
+      "device/nokia/superman/audio/primary_audio_policy_configuration.xml": "74e8b8137e31957a7450dd7c55a3586a4e7d2c9611c5b1c7666a971fbcd3407f",
+      "device/nokia/superman/audio/audio-core.sha256": "274c04e9dde3ce7b71237ece44010fbe720e6dbc0e8adaced77b4048fd409023",
+      "device/nokia/superman/audio/audio-playback.sha256": "d14f28ba5e4c00edb12052bc4dbe5ac6e331c8330b0e0c4834c358f4f3c189ca",
+      "device/nokia/superman/audio/audio-boot.contract": "f8af5aef143ec30b99ac6fe4a8381688248606abfd7a4f1479436e85426cca4f",
+      "device/nokia/superman/audio/board-power.dtsi": "27f8a32397b201d403dcc9e33bbc5a547851543c8cd0c51ed645fba9456c006e",
+      "device/nokia/superman/audio/product.mk": "476c6b3a690b194819f5c8f68ff6f65c1dec5f9a1cdaaba18637b275ebcf0031",
+      "device/nokia/superman/audio/zz-superman-audio-service.rc": "670c6d6f643fada406be163a5bf0a4fdbffc4ca0efec76633a1aae551aa1a8fc",
+      "device/nokia/superman/audio/README.md": "278f1515af5ef14e9228b1d893ea6ab9d190b2b302cd5cb40c5d88a156ff7be2",
+      "device/nokia/superman/audio/Android.bp": "3f9f9573e7888cc86e13c6cf7bdbc431c7e93a3697c130ad83bd86aaca314b7c",
+      "device/nokia/superman/audio/pf31/prebuilt/apr.ko": "e50e47c09b59b3fa9d6cbb121711116a435efd66c879764bf582f676066f17ca",
+      "device/nokia/superman/audio/pf31/prebuilt/superman_audio_board_power.ko": "a3ac70f410e57209099c11bc8cca2078dcc974e193f1b73931cfd99ce3344fd0",
+      "device/nokia/superman/audio/pf31/prebuilt/superman_amp.ko": "4024b93510a38c6a2cc5a3129a70556b2f8a28dc38fa6e3ecac9ababee150194",
+      "device/nokia/superman/audio/pf31/prebuilt/slimbus.ko": "b458262d4520f81862e00aa8266bc288715536d9ae128bcdd2c6791232452b99",
+      "device/nokia/superman/audio/pf31/prebuilt/q6core.ko": "4e3de8e9b09be1773f43fbd13ad0d10fc422dfb9428767798fcba4c66c84818b",
+      "device/nokia/superman/audio/pf31/prebuilt/superman_wcd9302.ko": "8962a537028990e4aa67e619a756d7d8ae1642dc26d4695e57c784a734621d58",
+      "device/nokia/superman/audio/pf31/prebuilt/q6dsp-common.ko": "bdf0e80c2821006ef06141303934e71ae06e202e79c61be0b1c22bad05834049",
+      "device/nokia/superman/audio/pf31/prebuilt/q6adm.ko": "6434d3727d47436ec42c2f48961eb27ecb01d791b4fbbad97bd32f80c4e4f5e9",
+      "device/nokia/superman/audio/pf31/prebuilt/q6afe.ko": "57dc8440f3622551f02f7d66335cc6c11a885e161efe8229b5b86da07826e7f2",
+      "device/nokia/superman/audio/pf31/prebuilt/q6asm.ko": "19930ee8ad10b1e984949dc478ab2b82672530cf1eb7cb358a0f4f491857736a",
+      "device/nokia/superman/audio/pf31/prebuilt/superman_wcd9302_reset.ko": "fa87268938f6006aa3a23d2fe3fb1c956cc164f94cafabcabf398733e664a9fb",
+      "device/nokia/superman/audio/pf31/prebuilt/superman_slim_pio.ko": "3a9e0e58d3ee6b3209b749ea866ef532fe2989b09d64363f5d2b66a0ca719843",
+      "device/nokia/superman/audio/pf31/prebuilt/superman-pcm.ko": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+      "device/nokia/superman/audio/superman-audio-hal.sh": "deaddc2e9688f3521ebf2408f5c78f3f08e8964bbad93cee934885663a5ea355",
+      "device/nokia/superman/audio/pf31/pcm/codec-sequence.h": "76446c8adb837b1478a54816edfffeb634b4e149a3e6b9a255ed36679ecfc31f",
+      "device/nokia/superman/audio/pf31/pcm/mic-pcm.h": "bab5da89506d76c987166e44b92cc483553a7d86efdf76a94c9fe3c5bf733c00",
+      "device/nokia/superman/audio/pf31/pcm/common-resource.h": "6f28f34d252985665afb75dd4106da9fb56d555b4c62d22ea2bc57a6242970da",
+      "device/nokia/superman/audio/pf31/pcm/mic-program.h": "1043c3eb8f157c18ece3c29d62cf5e303e34541bca51188a1d2f100a30011b73",
+      "device/nokia/superman/audio/android.hardware.superman.audio.xml": "d96f465923533ecbf72406cad92b11b29fdaebb423a558d475976dec7b92cd0d",
+      "device/nokia/superman/audio/pf31/pcm/common-tx-port.h": "4e588b0fb20d5605ae50b6619445abf2bf8d4aab3117930c5105bf4a0420f4d5"
+    },
+    "kernel_changed": false,
+    "boot_image_changed": false,
+    "normal_HAL_runtime": "PASS normal foreground AudioRecord+AudioTrack, HAL duplex/mute, following33s playback+Internet/standby/reopen on 9285180f-965e-4237-a793-76fd102acfd4",
+    "physical_speaker": "tone06 USER NO SOUND",
+    "microphone": "not implemented",
+    "startup": "bounded one attempt before framework audio service",
+    "module_ABI": {
+      "passed": true,
+      "kernel_provider": "actual linked vmlinux ELF CRCs, not stale vmlinux.symvers",
+      "modules": [
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-qmi_helpers.stdout",
+          "sha256": "f408b41fdd5181c00892d6f67292a10a2b329770fa3272e45513e8eeccd61eff",
+          "imports": 36,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-qrtr.stdout",
+          "sha256": "e45174d95211fa56a4f969abdde0b36be17b0f9f576df9133b44fcd5f57a962b",
+          "imports": 112,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-qcom_pdr_msg.stdout",
+          "sha256": "b867c18111fd26c09b5ff70e2c9bf1dbe7cf9690c929ff201b49b3c868faff7e",
+          "imports": 2,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-pdr_interface.stdout",
+          "sha256": "ed0d6e5d5f167d2e1a221ff9b3d63f2c1f4e761792149bc83741c150a9abba62",
+          "imports": 38,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-qrtr_smd.stdout",
+          "sha256": "6b27ace4c2c8b4437b9494f97763bb318a226eac10b1d6a3de618a030d156c7f",
+          "imports": 14,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-apr.stdout",
+          "sha256": "9cf7a3189dcd6f70215f6a775335519e6c31e2f3240128d8e506ab6682e86439",
+          "imports": 49,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/baseline/module-q6core.stdout",
+          "sha256": "706283c1fc7eac4ad4099249ab1f7c35cd5bd5e980ba0dee4d53cd8dbff87250",
+          "imports": 21,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/slimbus.ko",
+          "sha256": "b458262d4520f81862e00aa8266bc288715536d9ae128bcdd2c6791232452b99",
+          "imports": 52,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_wcd9302_reset.ko",
+          "sha256": "fa87268938f6006aa3a23d2fe3fb1c956cc164f94cafabcabf398733e664a9fb",
+          "imports": 21,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_slim_pio.ko",
+          "sha256": "fd04b70f98d9f11260e6feeac15e23215561d065d6721e06fdd41a247941a5c7",
+          "imports": 49,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_amp.ko",
+          "sha256": "48284a33b03bda668f6e7c6c56ed378e9e8f2e01c28f981e1624f94a29cc08dc",
+          "imports": 31,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_audio_board_power.ko",
+          "sha256": "a3ac70f410e57209099c11bc8cca2078dcc974e193f1b73931cfd99ce3344fd0",
+          "imports": 41,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_wcd9302.ko",
+          "sha256": "a594169f94a223752c2972e57eaf9f5b9b93d465cb458abc036b81539742f905",
+          "imports": 38,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/codec/superman_lineout_check.ko",
+          "sha256": "be00b221000d277be8a01685556d85c8d32819d679111e439e21bb94a0c0d59e",
+          "imports": 21,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/apr.ko",
+          "sha256": "0bde2b9fdf8f414cbeef576945a6b7c9c375cb54a6419b4ca6672a4c9d01f875",
+          "imports": 50,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/q6core.ko",
+          "sha256": "4e3de8e9b09be1773f43fbd13ad0d10fc422dfb9428767798fcba4c66c84818b",
+          "imports": 21,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/q6dsp-common.ko",
+          "sha256": "bdf0e80c2821006ef06141303934e71ae06e202e79c61be0b1c22bad05834049",
+          "imports": 2,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/q6afe.ko",
+          "sha256": "57dc8440f3622551f02f7d66335cc6c11a885e161efe8229b5b86da07826e7f2",
+          "imports": 30,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/q6asm.ko",
+          "sha256": "19930ee8ad10b1e984949dc478ab2b82672530cf1eb7cb358a0f4f491857736a",
+          "imports": 29,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/q6adm.ko",
+          "sha256": "6434d3727d47436ec42c2f48961eb27ecb01d791b4fbbad97bd32f80c4e4f5e9",
+          "imports": 32,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/dsp/superman-speaker-tone.ko",
+          "sha256": "160dc592d7e4960397949cc272205afdc31b04f19a32f737abbf9b7242f75207",
+          "imports": 58,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf31-audio-20261031/pcm/superman-pcm.ko",
+          "sha256": "43bcacd1fd5d327d4f62d878229f416509b09955a242f347652f51b8ba70a429",
+          "imports": 71,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        }
+      ],
+      "imports": 818
+    },
+    "codec_digital_loopback": "PASS actual1kHz waveform atRX3 before analogue output"
+  },
+  "pf31_analog_bias": {
+    "field": "104 mask0c value08",
+    "boot_id_at_install": "b2c57ec2-d884-4754-8eff-1d1105370f37",
+    "new_codec_sha256": "8962a537028990e4aa67e619a756d7d8ae1642dc26d4695e57c784a734621d58",
+    "muted_setup_active_readback_idle_restoration": true,
+    "physical_speaker": "pending physical listening for this candidate",
+    "updated_binary_cold_boot": "pending"
+  },
+  "pf31_amp_gpio13": {
+    "source": "RM-1040 board4jc_04g schematic pp2/4",
+    "schematic_pdf_sha256": "a39c55067bc05e4eec954414efca302fef51802d413f3cb2ceabcb4a4659d1d7",
+    "IHF_PA_EN": "MSM8226 TLMM13 -> N2151 C2",
+    "boot_id_at_install": "d201318a-d76a-4ca2-a47b-a6c049dd2171",
+    "amp_sha256": "4024b93510a38c6a2cc5a3129a70556b2f8a28dc38fa6e3ecac9ababee150194",
+    "actual_framework_active_readback": "cfg200/io3",
+    "idle_exact_restoration": "cfg0/io2",
+    "PMIC_GPIO2_untouched": true,
+    "physical_speaker": "USER YES HEARD eight-second Android AudioTrack tone",
+    "updated_binary_cold_boot": "pending",
+    "physical_observation_binary": "cached-pinctrl GPIO13 candidate; final direct-call cleanup candidate not yet active",
+    "native_cleanup_host_checks": "100 actual-source cycles plus all five failure/retry paths with cached state model ASan/UBSan PASS",
+    "actual_native_group_check": "100 on/off cycles with output latch low PASS",
+    "final_cleanup": "distinct native group on then off selections before latch restoration",
+    "runtime_state_at_install": "unsupported per-pin candidate retained off; services stopped; no force unload; final group candidate activates next boot"
+  },
+  "pf31_hal_buffering": {
+    "playback_periods": 8,
+    "start_threshold_frames": 2880,
+    "capture_periods": 4,
+    "HAL_sha256": "2f6ca54a0b7a4fd314c929ac9c2ab93b282bcc9279ae0e3a21babcf019b52725"
+  },
+  "pf31_radio_audio_order": {
+    "boot_id_at_install": "d3fcf142-bd79-4a8b-9a9e-94aaad88065d",
+    "core_script_sha256": "394626539d7cb07f38c4d7cef14729a2f0d0317777e5cebd8b25c1aae932d80b",
+    "radio_terminal_state_gate_bound_seconds": 15,
+    "no_automatic_radio_retry": true,
+    "host_actual_gate_cases": "PASS ready/partial/failed/delayed/timeout/invalid",
+    "observed_failure": "WCNSS PAS boot42.15 overlaps ADSP42.44; WCN auth fails43.46 while ADSPup43.48",
+    "observed_late_recovery": "single explicit WCN start893.73 -> running895.10 and wlan0/hci0 enumeration",
+    "fresh_boot_qualification": "pending",
+    "causality": "PROBABLE ordering conflict until ordered boot qualification"
+  },
+  "pf31_pcm_shutdown_order": {
+    "predecessor_module_sha256": "6aa822009ea56d1f6a3590f1a5465cef6cf695f17fc71b804c70dc1427ef01bb",
+    "predecessor_actual_HAL_hardware_starts": 20,
+    "new_duplex_module_sha256": "d57c95e360f087d70b2ef8cdbf7be551ae25ebeeee61624774e95fd977f2d712",
+    "new_duplex_runtime": {
+      "passed": true,
+      "boot_id": "edc79c77-32b8-405f-bb87-58211a236a6f",
+      "source_sha256": "ce4d63af037d57c7b40383b713e6eea5fe4e862404f2e54c195409b07b316545",
+      "module_sha256": "d57c95e360f087d70b2ef8cdbf7be551ae25ebeeee61624774e95fd977f2d712",
+      "real_HAL_capture_and_duplex_rounds": 4,
+      "input_output_both_stop_orders": true,
+      "mic_mute_no_leaked_samples": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "root_install_changed": false,
+      "candidate_left_active": true
+    },
+    "new_duplex_framework": {
+      "passed": true,
+      "boot_id": "edc79c77-32b8-405f-bb87-58211a236a6f",
+      "real_framework_playback_seconds": 33,
+      "actual_DSP_period_delta": 3679,
+      "DSP_errors": 0,
+      "standby_PCM_closed_L25_disabled": true,
+      "framework_reopen": true,
+      "concurrent_WiFi_Internet_ICMP": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "root_RO": true,
+      "SIM2_CORE_modem_data_transport_ready": true,
+      "physical_speaker": "unresolved; test input zero"
+    },
+    "AFE_before_Slim_disconnect": true,
+    "earlier_failure_causality": "probable; do not infer from cleanup ordering alone",
+    "cold_boot": "pending"
+  },
+  "pf31_private_microphone": {
+    "physical_acoustic_response": {
+      "02": {
+        "rms": 12.825366693335335,
+        "1kHz_peak_amplitude": 0.07719717232033552,
+        "1kHz_power_fraction": 1.8114785998279395e-05,
+        "range": [
+          -67.39615885416667,
+          28.603841145833332
+        ]
+      },
+      "03": {
+        "rms": 126.77021412412176,
+        "1kHz_peak_amplitude": 177.48296630635397,
+        "1kHz_power_fraction": 0.9800515360138168,
+        "range": [
+          -269.5252278645833,
+          215.47477213541666
+        ]
+      }
+    },
+    "HAL_duplex_and_mute": {
+      "passed": true,
+      "boot_id": "edc79c77-32b8-405f-bb87-58211a236a6f",
+      "source_sha256": "ce4d63af037d57c7b40383b713e6eea5fe4e862404f2e54c195409b07b316545",
+      "module_sha256": "d57c95e360f087d70b2ef8cdbf7be551ae25ebeeee61624774e95fd977f2d712",
+      "real_HAL_capture_and_duplex_rounds": 4,
+      "input_output_both_stop_orders": true,
+      "mic_mute_no_leaked_samples": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "root_install_changed": false,
+      "candidate_left_active": true
+    },
+    "normal_foreground_AudioRecord_AudioTrack": {
+      "speaker_frames": 144000,
+      "passed": true,
+      "frames": 72000,
+      "reopen_rounds": 3,
+      "sample_power": 577190960
+    },
+    "normal_app_APK_sha256": "46aa5e70bf5ed1daa5e4432d7e9b00bc3d282cb2274b5deece10cf8ad5d7ea04",
+    "diagnostic_recordings": "three short0.5s samples, metrics only; earlier0.341s raw diagnostic captures retained privately",
+    "Android_input_endpoint": true,
+    "feature_detection": "Cold09 microphone and audio.output detected",
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "automatic_CORE_playback_normal_HAL": true,
+      "Android_SIM2_modem_data_transport": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "exact_install_readbacks": 26,
+      "framework_30s_standby_reopen_Internet": true,
+      "root_RO": true,
+      "physical_speaker": "USER HEARD GPIO13 mapping previously",
+      "live_SLIM_register_diagnostics": false,
+      "radio_before_ADSP": {
+        "WCN_start": 40.448482,
+        "WCN_up": 41.880769,
+        "ADSP_start": 44.095807
+      },
+      "normal_foreground_AudioRecord_AudioTrack": {
+        "passed": true,
+        "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+        "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+        "normal_foreground_AudioRecord_AudioTrack": true,
+        "capture_reopenings": 15,
+        "rounds": [
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 1386921014
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 320297394
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 2167027018
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 708860961
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 798321136
+          }
+        ],
+        "native_files": 108,
+        "seed_files": 4,
+        "root_RO": true,
+        "retained": false,
+        "DSP_errors": 0,
+        "normal_services_left_running": true
+      },
+      "microphone_audio_output_features": true,
+      "shared_power_and_TX_FIFO_clean": true,
+      "transport_guards_cold_boot": true,
+      "common_TX_lifetime_cold_boot": true,
+      "ring80_cold_boot": true
+    },
+    "selected_module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+    "selected_warm_HAL_reopenings": {
+      "passed": true,
+      "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+      "source_sha256": "505e0720476bdedec3f3cf074ba72ed50e28a30767bfc0d48506f8cb75d7f06b",
+      "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+      "actual_capture_reopenings_during_playback": 50,
+      "physical_microphone_used": true,
+      "TX_port_owned_by_common_codec_lease": true,
+      "microphone_program_unchanged": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "root_install_changed": false,
+      "candidate_left_active": true
+    },
+    "selected_normal_foreground_AudioRecord_AudioTrack": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+      "normal_foreground_AudioRecord_AudioTrack": true,
+      "capture_reopenings": 15,
+      "rounds": [
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 1386921014
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 320297394
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 2167027018
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 708860961
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 798321136
+        }
+      ],
+      "native_files": 108,
+      "seed_files": 4,
+      "root_RO": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "normal_services_left_running": true
+    },
+    "predecessor_tests_are_historical": true
+  },
+  "pf31_transport_guards": {
+    "boot_id_at_install": "d9969e23-84fe-4601-9a60-e280f22c04d5",
+    "modules": {
+      "/vendor/lib/modules/audio-pf31/superman_slim_pio.ko": "3a9e0e58d3ee6b3209b749ea866ef532fe2989b09d64363f5d2b66a0ca719843",
+      "/vendor/lib/modules/audio-pf31/apr.ko": "e50e47c09b59b3fa9d6cbb121711116a435efd66c879764bf582f676066f17ca"
+    },
+    "APR_reprobe_route_restoration": "confirmed missing reply route caused hot-rebind timeouts; candidate restores it",
+    "SLIM_unique_read_wire_TID": "prevents delayed reply with recycled caller ID from being accepted for another read; causal link to microphone zeros unproven",
+    "host_actual_functions": {
+      "passed": true,
+      "source_sha256": {
+        "superman_slim_pio.c": "a339961c479f03bd83cb42f791c501bc967796b0b55c543f1367f3e500422c3a",
+        "apr.c": "2dd521f15071df23ebd3cd7521f224390576b5b6398c71ebf355c1e401756106"
+      },
+      "actual_functions": true,
+      "sanitizers": "address,undefined",
+      "hardware_qualification": "pending"
+    },
+    "kernel_files_unchanged": true,
+    "hardware_runtime": "pending next manual Android boot",
+    "current_retained_mic": "not force-unloaded; reboot required",
+    "APR_actual_rebind_runtime": {
+      "passed": true,
+      "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+      "actual_ASM_driver_unload_reprobe": true,
+      "real_ASM_playback_standby_reopen": true,
+      "hardware_starts": 2,
+      "no_reply_timeouts": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "APR_sha256": "e50e47c09b59b3fa9d6cbb121711116a435efd66c879764bf582f676066f17ca"
+    },
+    "microphone_zero_data": "Resolved for selected common TX lifetime module:50 warm native capture reopenings,15 warm and15 cold normal Android captures allPASS; original failures preserved.",
+    "cold_boot_qualification": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "automatic_CORE_playback_normal_HAL": true,
+      "Android_SIM2_modem_data_transport": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "exact_install_readbacks": 26,
+      "framework_30s_standby_reopen_Internet": true,
+      "root_RO": true,
+      "physical_speaker": "USER HEARD GPIO13 mapping previously",
+      "live_SLIM_register_diagnostics": false,
+      "radio_before_ADSP": {
+        "WCN_start": 40.448482,
+        "WCN_up": 41.880769,
+        "ADSP_start": 44.095807
+      },
+      "normal_foreground_AudioRecord_AudioTrack": {
+        "passed": true,
+        "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+        "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+        "normal_foreground_AudioRecord_AudioTrack": true,
+        "capture_reopenings": 15,
+        "rounds": [
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 1386921014
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 320297394
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 2167027018
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 708860961
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 798321136
+          }
+        ],
+        "native_files": 108,
+        "seed_files": 4,
+        "root_RO": true,
+        "retained": false,
+        "DSP_errors": 0,
+        "normal_services_left_running": true
+      },
+      "microphone_audio_output_features": true,
+      "shared_power_and_TX_FIFO_clean": true,
+      "transport_guards_cold_boot": true,
+      "common_TX_lifetime_cold_boot": true,
+      "ring80_cold_boot": true
+    }
+  },
+  "pf31_audio_ring80": {
+    "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+    "runtime": {
+      "passed": true,
+      "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+      "real_HAL_playback_standby_reopen_rounds": 5,
+      "exact_hardware_starts": 10,
+      "PCM_sha256": "070550b0b88fd6005601ae019b8327031811f12846dd185d7b3ad404a3ee0b01",
+      "HAL_sha256": "2f6ca54a0b7a4fd314c929ac9c2ab93b282bcc9279ae0e3a21babcf019b52725",
+      "retained": false,
+      "DSP_errors": 0,
+      "capture_buffer_unchanged": true,
+      "candidate_left_active_audio_services_stopped": true
+    },
+    "host_actual_functions": {
+      "passed": true,
+      "playback_ring_bytes": 7680,
+      "playback_periods": 8,
+      "prebuffer_frames": 2880,
+      "capture_ring_bytes_unchanged": 3840,
+      "source_sha256": {
+        "superman-pcm.c": "505e0720476bdedec3f3cf074ba72ed50e28a30767bfc0d48506f8cb75d7f06b",
+        "mic-pcm.h": "e9020996a6e2e4a1eea9bb48248541a8bfe4d2a5a93569a753a13e9a009e03fb",
+        "audio_hw.c": "1694005728619f888cbaf2f988bb3f51ea120585ae35901ec58a84cf90daf9a4"
+      },
+      "sanitizers": "address,undefined"
+    },
+    "reported_latency_ms": 80,
+    "capture_ring_ms": 40,
+    "normal_framework": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "real_framework_playback_seconds": 33,
+      "actual_DSP_period_delta": 3666,
+      "DSP_errors": 0,
+      "standby_PCM_closed_L25_disabled": true,
+      "framework_reopen": true,
+      "concurrent_WiFi_Internet_ICMP": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "root_RO": true,
+      "SIM2_CORE_modem_data_transport_ready": true,
+      "physical_speaker": "unresolved; test input zero"
+    },
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "automatic_CORE_playback_normal_HAL": true,
+      "Android_SIM2_modem_data_transport": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "exact_install_readbacks": 26,
+      "framework_30s_standby_reopen_Internet": true,
+      "root_RO": true,
+      "physical_speaker": "USER HEARD GPIO13 mapping previously",
+      "live_SLIM_register_diagnostics": false,
+      "radio_before_ADSP": {
+        "WCN_start": 40.448482,
+        "WCN_up": 41.880769,
+        "ADSP_start": 44.095807
+      },
+      "normal_foreground_AudioRecord_AudioTrack": {
+        "passed": true,
+        "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+        "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+        "normal_foreground_AudioRecord_AudioTrack": true,
+        "capture_reopenings": 15,
+        "rounds": [
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 1386921014
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 320297394
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 2167027018
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 708860961
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 798321136
+          }
+        ],
+        "native_files": 108,
+        "seed_files": 4,
+        "root_RO": true,
+        "retained": false,
+        "DSP_errors": 0,
+        "normal_services_left_running": true
+      },
+      "microphone_audio_output_features": true,
+      "shared_power_and_TX_FIFO_clean": true,
+      "transport_guards_cold_boot": true,
+      "common_TX_lifetime_cold_boot": true,
+      "ring80_cold_boot": true
+    }
+  },
+  "pf31_audio_common_TX_lifetime": {
+    "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+    "runtime": {
+      "passed": true,
+      "boot_id": "988f8ecd-45bc-4c89-afa6-e4764047dc56",
+      "source_sha256": "505e0720476bdedec3f3cf074ba72ed50e28a30767bfc0d48506f8cb75d7f06b",
+      "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+      "actual_capture_reopenings_during_playback": 50,
+      "physical_microphone_used": true,
+      "TX_port_owned_by_common_codec_lease": true,
+      "microphone_program_unchanged": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "root_install_changed": false,
+      "candidate_left_active": true
+    },
+    "host_actual_functions": {
+      "passed": true,
+      "source_sha256": {
+        "common-resource.h": "6f28f34d252985665afb75dd4106da9fb56d555b4c62d22ea2bc57a6242970da",
+        "common-tx-port.h": "4e588b0fb20d5605ae50b6619445abf2bf8d4aab3117930c5105bf4a0420f4d5"
+      },
+      "actual_functions": true,
+      "failure_points": 19,
+      "sanitizers": "address,undefined"
+    },
+    "capture_cleanup_tests": {
+      "passed": true,
+      "source_sha256": "bab5da89506d76c987166e44b92cc483553a7d86efdf76a94c9fe3c5bf733c00",
+      "actual_cleanup": true,
+      "failure_points": 12,
+      "sanitizers": "address,undefined"
+    },
+    "normal_framework": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+      "normal_foreground_AudioRecord_AudioTrack": true,
+      "capture_reopenings": 15,
+      "rounds": [
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 1386921014
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 320297394
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 2167027018
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 708860961
+        },
+        {
+          "speaker_frames": 144000,
+          "passed": true,
+          "frames": 72000,
+          "reopen_rounds": 3,
+          "sample_power": 798321136
+        }
+      ],
+      "native_files": 108,
+      "seed_files": 4,
+      "root_RO": true,
+      "retained": false,
+      "DSP_errors": 0,
+      "normal_services_left_running": true
+    },
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "automatic_CORE_playback_normal_HAL": true,
+      "Android_SIM2_modem_data_transport": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "exact_install_readbacks": 26,
+      "framework_30s_standby_reopen_Internet": true,
+      "root_RO": true,
+      "physical_speaker": "USER HEARD GPIO13 mapping previously",
+      "live_SLIM_register_diagnostics": false,
+      "radio_before_ADSP": {
+        "WCN_start": 40.448482,
+        "WCN_up": 41.880769,
+        "ADSP_start": 44.095807
+      },
+      "normal_foreground_AudioRecord_AudioTrack": {
+        "passed": true,
+        "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+        "module_sha256": "e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095",
+        "normal_foreground_AudioRecord_AudioTrack": true,
+        "capture_reopenings": 15,
+        "rounds": [
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 1386921014
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 320297394
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 2167027018
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 708860961
+          },
+          {
+            "speaker_frames": 144000,
+            "passed": true,
+            "frames": 72000,
+            "reopen_rounds": 3,
+            "sample_power": 798321136
+          }
+        ],
+        "native_files": 108,
+        "seed_files": 4,
+        "root_RO": true,
+        "retained": false,
+        "DSP_errors": 0,
+        "normal_services_left_running": true
+      },
+      "microphone_audio_output_features": true,
+      "shared_power_and_TX_FIFO_clean": true,
+      "transport_guards_cold_boot": true,
+      "common_TX_lifetime_cold_boot": true,
+      "ring80_cold_boot": true
+    },
+    "TX_FIFO_common_lease": true,
+    "mic_bias_and_source_released_each_standby": true
+  },
+  "pf32_normal_screen_timeout": {
+    "boot_id_at_install": "9285180f-965e-4237-a793-76fd102acfd4",
+    "property_candidate": {
+      "boot_id_preparation": "9285180f-965e-4237-a793-76fd102acfd4",
+      "old_build_prop_sha256": "f8a4fab28c41df157f9a398487f4a1c24e65056102a539eb674bb0e5554be4c1",
+      "new_build_prop_sha256": "cf46adb0c457affb05f831114a69514ba663ec3438c3a9fe7bf054d5cf0ba031",
+      "only_property_change": "ro.superman.long_screen_timeout true -> false",
+      "deep_suspend_remains_disabled": true,
+      "user_screen_timeout_setting_unchanged_ms": 60000,
+      "requires_positive_physical_screen_check": true,
+      "requires_manual_Android_reboot_for_activation": true
+    },
+    "physical_screen_check": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "user_answer": "Display and touch work normally",
+      "question_context": "After brief screen-off/wake test, before enabling existing one-minute automatic timeout",
+      "runtime_evidence": "screen-cycle-runtime-01/COMPLETION.json"
+    },
+    "warm_screen_cycle": {
+      "passed": true,
+      "boot_id": "9285180f-965e-4237-a793-76fd102acfd4",
+      "original_FAILURE_preserved": true,
+      "original_failure": "Host harness searched state=OFF instead of actual mActualState=OFF; power helper itself completed OFF and wake successfully",
+      "framework_screen_off_and_wake": true,
+      "display_OFF_and_ON": true,
+      "same_boot_ADB_and_WiFi": true,
+      "suspend_success_count": 0,
+      "native_suspend_guard_active": true,
+      "user_input_injected": false,
+      "persistent_policy_changed": false,
+      "physical_display_touch_observation": "pending"
+    },
+    "source_file": "device/nokia/superman/device.mk",
+    "source_sha256": "13e288be970bf1813506011911b27f53800b7473fe98284479acc8b6f235784b",
+    "normal_timeout_ms": 60000,
+    "native_suspend_guard_retained": true,
+    "charger_policy_unchanged": true,
+    "activation": "next manually selected Android boot",
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "79fb80d0-45b5-4f44-a4d2-ba80d268eb20",
+      "normal_timeout_ms": 60000,
+      "diagnostic30min_override_disabled": true,
+      "automatic_timeout_reason_confirmed": true,
+      "actual_display_OFF_ON": true,
+      "observed_screen_OFF_seconds": 95.1746571980002,
+      "suspend_success_count": 0,
+      "native_suspend_guard_retained": true,
+      "same_boot_ADB_and_WiFi": true,
+      "normal_AudioRecord_AudioTrack_after_idle": {
+        "speaker_frames": 144000,
+        "passed": true,
+        "frames": 72000,
+        "reopen_rounds": 3,
+        "sample_power": 332534844
+      },
+      "native_files": 108,
+      "seed_files": 4,
+      "exact_install_readbacks": 27,
+      "root_RO": true,
+      "charger_policy_unchanged": true,
+      "charge_state_evidence": "/run/media/doletrandat/AOSP-BUILD/aosp11/.codex-restart/artifacts/pf31-phone-audio-power-20261031/charge-state-runtime-cold10/RESULT.json",
+      "graphics_kernel_and_Governor_unchanged": true,
+      "radio_before_ADSP": {
+        "WCN_up": 41.791444,
+        "ADSP_start": 43.810134
+      }
+    }
+  },
+  "pf32_measured_battery_current": {
+    "source_root": "device/nokia/superman/power/current",
+    "source_sha256": {
+      "Makefile": "23b2b89b38f96456dd4e2c461cf87a10ab8e4ae6f7f00ede4a222f1969e60d63",
+      "README.md": "fbae1649af85a2b5f689481c235b56a2e97b17b5aff4b7c3d3009348be678425",
+      "battery-current.sha256": "bc1f3f3222bfd4c2512f45b7d782a6a36fe6db68ff0da6488c57a2659c16596f",
+      "prebuilt/qcom-spmi-iadc.ko": "d328029b6bc34e5891021aab013f68153b98d2b4b433607397d64f63938f6b8a",
+      "prebuilt/superman-iadc-current.ko": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e",
+      "product.mk": "fcfa83bea8499b5bc8f4a01eae86e48d84e204e5090434c9b2e71893ad45f5bf",
+      "qcom-spmi-iadc.c": "a9c114d96aa55aefbfcd9b5ad08fb3d0ae3a6804e8e15398121bdfb51f63c382",
+      "superman-battery-current.rc": "fb1f5508319fc0468d2e13e59aba97033087bdf2ad42b6d866bd20fb791e1d58",
+      "superman-battery-current.sh": "f0a688b8425243be20bdb44adeb10a18ac0cd24ad9e397e2a5684bf32d3456a0",
+      "superman-iadc-current.c": "62c44cc55d558ce6dee37fce395596a5cf27001e5c2258f1b7ebceb366ea8509",
+      "superman-iadc-current.h": "6fdbe94c7552386cf2c05d6d4cd725e8bd5d0fd86abda60d0d2611aa59cd1884"
+    },
+    "device_mk_sha256": "9d6eaded52c78405c91000f03a099e2ffb1e27bf23d6422ed3cf68e5ee7edc0d",
+    "build": {
+      "command": [
+        "bwrap",
+        "--ro-bind",
+        "/",
+        "/",
+        "--dev",
+        "/dev",
+        "--proc",
+        "/proc",
+        "--tmpfs",
+        "/tmp",
+        "--bind",
+        "/home/doletrandat/.cache/superman-pf32-usability-20261102/current-integration",
+        "/home/doletrandat/.cache/superman-pf32-usability-20261102/current-integration",
+        "/run/media/doletrandat/AOSP-BUILD/aosp11/prebuilts/build-tools/linux-x86/bin/make",
+        "-C",
+        "/home/doletrandat/.cache/superman-r37-smp-source-20260924",
+        "O=/home/doletrandat/.cache/superman-pf13-network-20261018/kernel",
+        "M=/home/doletrandat/.cache/superman-pf32-usability-20261102/current-integration",
+        "ARCH=arm",
+        "CROSS_COMPILE=arm-linux-gnueabi-",
+        "-j20",
+        "modules"
+      ],
+      "rc": 0,
+      "kernel_files_unchanged": true,
+      "before": {
+        ".config": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
+        "Module.symvers": "0630079417c76739aa1d00aeeb0c6eeae4669aee844ef099f8f90eabf9eaa865",
+        "vmlinux": "c9b5613bd522844c634906318983de27e6956e41cfe95da7516edabf5ed19d2e",
+        "arch/arm/boot/zImage": "c8afc6f0c7cf80c2faeec41a5061947cd1891bd97f52124cf3039c595ccf8bbf"
+      },
+      "after": {
+        ".config": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
+        "Module.symvers": "0630079417c76739aa1d00aeeb0c6eeae4669aee844ef099f8f90eabf9eaa865",
+        "vmlinux": "c9b5613bd522844c634906318983de27e6956e41cfe95da7516edabf5ed19d2e",
+        "arch/arm/boot/zImage": "c8afc6f0c7cf80c2faeec41a5061947cd1891bd97f52124cf3039c595ccf8bbf"
+      },
+      "source_hashes": {
+        "qcom-spmi-iadc.c": "a9c114d96aa55aefbfcd9b5ad08fb3d0ae3a6804e8e15398121bdfb51f63c382",
+        "superman-iadc-current.h": "6fdbe94c7552386cf2c05d6d4cd725e8bd5d0fd86abda60d0d2611aa59cd1884",
+        "superman-iadc-current.c": "62c44cc55d558ce6dee37fce395596a5cf27001e5c2258f1b7ebceb366ea8509"
+      }
+    },
+    "ABI": {
+      "passed": true,
+      "providers": "actual linked kernel ELF plus exact new IADC export",
+      "modules": [
+        {
+          "name": "qcom-spmi-iadc.ko",
+          "sha256": "d328029b6bc34e5891021aab013f68153b98d2b4b433607397d64f63938f6b8a",
+          "imports": 32,
+          "exports": {
+            "superman_iadc_current_ua": 1633104166
+          },
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "name": "superman-iadc-current.ko",
+          "sha256": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e",
+          "imports": 17,
+          "exports": {},
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        }
+      ]
+    },
+    "physical_discharge": {
+      "passed": true,
+      "boot_id": "79fb80d0-45b5-4f44-a4d2-ba80d268eb20",
+      "module_sha256": "14b608c3de54f609701b2e24780847a4a254fb831bc6fbcbb62ce97f3ffcfd7d",
+      "USB_unplug_reconnect_observed": true,
+      "battery_only_seconds_observed": 38.370000000000005,
+      "internal_current_tracks_actual_discharge": true,
+      "direction": "negative while discharging; near zero on USB, matching Android batteryCurrent direction",
+      "summary": {
+        "USB_before": {
+          "samples": 33,
+          "current0_median_uA": 1271,
+          "current0_min_uA": 1271,
+          "current0_max_uA": 1271,
+          "voltage_median_uV": 3713697,
+          "temperature_min_deciC": 346,
+          "temperature_max_deciC": 346
+        },
+        "battery_only": {
+          "samples": 28,
+          "current0_median_uA": -258796.0,
+          "current0_min_uA": -354176,
+          "current0_max_uA": -233998,
+          "voltage_median_uV": 3644340.0,
+          "temperature_min_deciC": 343,
+          "temperature_max_deciC": 346
+        },
+        "USB_after": {
+          "samples": 10,
+          "current0_median_uA": 1271.0,
+          "current0_min_uA": 1271,
+          "current0_max_uA": 1271,
+          "voltage_median_uV": 3706761.0,
+          "temperature_min_deciC": 343,
+          "temperature_max_deciC": 343
+        }
+      },
+      "internal_rsense": "PM8226 normal IADC calibrated internal trim; existing corrected driver",
+      "external_current_not_qualified": "Board external resistance not established; external values retained only as raw comparison",
+      "charger_policy_changed": false,
+      "charging_success_claimed": false,
+      "Android_current_property_integrated": false,
+      "retained": false
+    },
+    "Android_runtime": {
+      "passed": true,
+      "boot_id": "79fb80d0-45b5-4f44-a4d2-ba80d268eb20",
+      "modules": [
+        {
+          "name": "qcom-spmi-iadc.ko",
+          "sha256": "d328029b6bc34e5891021aab013f68153b98d2b4b433607397d64f63938f6b8a",
+          "imports": 32,
+          "exports": {
+            "superman_iadc_current_ua": 1633104166
+          },
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "name": "superman-iadc-current.ko",
+          "sha256": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e",
+          "imports": 17,
+          "exports": {},
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        }
+      ],
+      "actual_sysfs_attach_remove_cycles": 3,
+      "Android_BatteryManager_current_API_matching_sysfs": true,
+      "API_reads": 3,
+      "existing_Health_HAL_reconnected": true,
+      "source_ADC_signed_math_unchanged": true,
+      "charger_policy_and_SOC_unchanged": true,
+      "native_files": 108,
+      "seed_files": 4,
+      "candidate_left_active": true,
+      "persistent_install_changed": false
+    },
+    "loader_tests": {
+      "passed": true,
+      "distinct_cases": 13,
+      "executions": 23,
+      "source_sha256": "f0a688b8425243be20bdb44adeb10a18ac0cd24ad9e397e2a5684bf32d3456a0"
+    },
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "406a4f72-3303-4404-bc19-7576dd53f160",
+      "automatic_current_loader": true,
+      "Health_running": true,
+      "Android_BatteryManager_reads": 6,
+      "exact_selected_readbacks": 32,
+      "native_files": 113,
+      "seed_files": 4,
+      "root_RO": true,
+      "normal_duplex_cold_boot": {
+        "speaker_frames": 144000,
+        "passed": true,
+        "frames": 72000,
+        "reopen_rounds": 3,
+        "sample_power": 1982236498
+      },
+      "normal_duplex_reopening": {
+        "speaker_frames": 144000,
+        "passed": true,
+        "frames": 72000,
+        "reopen_rounds": 3,
+        "sample_power": 283435567
+      },
+      "normal_standby_reached": true,
+      "standby_wait_polls": 2,
+      "normal_timeout_ms": 60000,
+      "native_suspend_guard_retained": true,
+      "same_boot_WiFi_Internet_SIM2_loaded": true,
+      "WCN_up": 42.395915,
+      "ADSP_start": 44.365664,
+      "original_FAILURE_preserved": true,
+      "original_failure": "Harness required playback already closed immediately after force-stop; AudioFlinger was still draining to its normal standby. No stream/retention errors. Follow-on waited for standby and verified reopening and cleanup.",
+      "charging_or_SOC_success_claimed": false
+    },
+    "charger_policy_SOC_and_suspend_unchanged": true,
+    "rollback": "/vendor/etc/superman/pf32-current-install-rollback/rollback.sh",
+    "persistent_install": {
+      "passed": true,
+      "boot_id": "79fb80d0-45b5-4f44-a4d2-ba80d268eb20",
+      "exact_file_readbacks": 8,
+      "native_files": 113,
+      "seed_files": 4,
+      "root_RO": true,
+      "rollback": "/vendor/etc/superman/pf32-current-install-rollback/rollback.sh",
+      "cold_boot_pending": true,
+      "warm_packaged_loader_pending": true,
+      "boot_kernel_DT_ramdisk_GPU_eMMC_NV_unchanged": true
+    },
+    "packaged_loader_runtime": {
+      "passed": true,
+      "boot_id": "79fb80d0-45b5-4f44-a4d2-ba80d268eb20",
+      "actual_packaged_loader": true,
+      "read_only_preflight_without_modules": true,
+      "foreign_provider_refused": true,
+      "invalid_mode_64": true,
+      "normal_owned_load": true,
+      "idempotent_ready": true,
+      "Android_API_reads": 3,
+      "Health_reconnected": true,
+      "native_files": 113,
+      "seed_files": 4,
+      "root_RO": true,
+      "cold_boot": "pending init automatic startup"
+    },
+    "automatic_startup_qualified": true
+  },
+  "pf33_android_SMS": {
+    "library_sha256": "e2be6576854a9cc3d0ab2c0192ba3d89f53285ae211443d4cbca5d3005b9280f",
+    "build_sources": {
+      "device/nokia/superman/modem/ril/sim-io.h": "12177ef1bf1d37381a3abfae7dd6b9f0c4622ab137fff79c7218f2408d2063c6",
+      "device/nokia/superman/modem/ril/model.h": "a95a078ee953e44b0cc3f1fa14fb867bafc18f277454b913d37b70de46b930b3",
+      "device/nokia/superman/modem/ril/sim-io.c": "74da735186ebdbad4fdbb08dd55a8236d36dd9a2f9645839f3b63370d8efe6a0",
+      "device/nokia/superman/modem/ril/subscription.h": "de76238d249663f774bbdde3416d675a44ca21c629742d66f8a5cd6151949dd8",
+      "device/nokia/superman/modem/ril/qmux.c": "f1085bfeac56d72064a7a0efd9c1fe1672e279e50b3fa61e318211879b77c7c5",
+      "device/nokia/superman/modem/ril/superman-ril.c": "8d1a2b792eb65c607d22db5e4db8118f7053c1596a94d98ed55d1a69d13d6610",
+      "device/nokia/superman/modem/ril/model.c": "a32074525fdda6ca9d2b5904d1432ca01d27c2c6cb1322a37ac7dc9fc1cfc452",
+      "device/nokia/superman/modem/ril/sms.c": "576150ff0c3dfe4679f4abb3ab2b732cfe5ae6c4e25112332d7220f0dfac43d8",
+      "device/nokia/superman/modem/ril/calls.h": "7bfbd95679ea60b3ce1db83ed508da89983db48a4766ca1648d06dd46d39a1c0",
+      "device/nokia/superman/modem/ril/calls.c": "525d90238580d07f7e5159751a1c191fa39f9c98e48f20462146f0aeca10e8d1",
+      "device/nokia/superman/modem/ril/qmux.h": "35d650895240d173487c0afd1751c6bbd52ba652ca9b4e99f5e838874cc2ef0b",
+      "device/nokia/superman/modem/ril/subscription.c": "1028d0b53a665f904e5f41954ae7c557817ac18ba0f8170ebd1e944542610417",
+      "device/nokia/superman/modem/ril/sms.h": "650d4b65594ad62f04e330207f931b577006a2d954aeea2cc454af3b945023bd",
+      "device/nokia/superman/modem/ril/tests/run.sh": "8ce777a4d7af8ba3c483287b2f0f176a1b9f2a2c01d716606607b051b18063bb",
+      "device/nokia/superman/modem/ril/tests/sms-test.c": "41535ca163edcb691b1f4e6d4852293119e97edbe5eac092bc9f964b0347f126",
+      "device/nokia/superman/modem/ril/tests/sms-ril-test.c": "8f26bb1645f85778a7c205d13b8592b38c5b9f0c8957af85594cae4727a4bf14",
+      "device/nokia/superman/modem/ril/tests/model-test.c": "c202cdf76d53fee6a064f90046ef79d52c06d438dbd36c97f1e3d60a64b64c9a",
+      "device/nokia/superman/modem/ril/tests/native-harness.c": "09e71697cd366a81a38deeb7aba3806612e1739034a8679d8272a0f338b144e1",
+      "device/nokia/superman/modem/ril/tests/sms-transport-test.c": "5d2a75a84770efc51612c08ea14c1907fd0a61c4fda5cca5a3d28ac1b11cf784",
+      "device/nokia/superman/modem/ril/tests/include/sys/system_properties.h": "f0dde728e07b9fde5799bd2f466757b138928d884efa7669eceee72cd3845c52",
+      "device/nokia/superman/modem/ril/tests/include/android/log.h": "1e14267ddc6d73d8d95366a13dd466bfb2678d68be6fee42d40d42dcac1dd063",
+      "device/nokia/superman/modem/qmux-codec.h": "cc927bf90c933c29aef9ebfc0c0d57cf3b6db565550dc37c72a7aeb291751389",
+      "device/nokia/superman/modem/Android.bp": "bf8d36d84d9e4925fe8a6e26f64f6d1d6cf15e5089dd17676b8cba4be8fe3acb"
+    },
+    "ASan_UBSan_tests": {
+      "passed": true,
+      "malformed_payload_cases": 65536,
+      "actual_RIL_callbacks_and_transport_tested": true
+    },
+    "native_ARM_and_modem": {
+      "passed": true,
+      "boot_id": "406a4f72-3303-4404-bc19-7576dd53f160",
+      "actual_ARM_mock_callback_and_transport_tests": true,
+      "actual_modem_WMS_client_setup_and_route_readback": true,
+      "routing_readback_unchanged": true,
+      "prior_test_report_flag_requires_cold_reset": true,
+      "normal_modem_queries_and75s_soak": true,
+      "no_SMS_or_call_sent": true,
+      "original_RIL_restored": true,
+      "native_files": 113,
+      "seed_files": 4,
+      "persistent_install_changed": false,
+      "build_files": {
+        "libsuperman-ril.so": "e2be6576854a9cc3d0ab2c0192ba3d89f53285ae211443d4cbca5d3005b9280f",
+        "ril-native-harness": "48993389d2cc2599bd473ec568d865f1f23f3754bdba8fb567082f7215507e41",
+        "sms-native-model": "069de11ea04e59585388cb75201852c97adb5f437902c03ee901d8b589ecea50",
+        "sms-native-transport": "21617f6a1905b8c108f5e91784817a1f89a6c5c7d0ee29ad8606d92aa5bf57a3"
+      }
+    },
+    "interfaces": [
+      "SEND_SMS",
+      "SEND_SMS_EXPECT_MORE",
+      "GET_SMSC_ADDRESS",
+      "SMS_ACKNOWLEDGE",
+      "REPORT_SMS_MEMORY_STATUS",
+      "NEW_SMS",
+      "NEW_SMS_STATUS_REPORT",
+      "NEW_SMS_ON_SIM"
+    ],
+    "queue_bound": 8,
+    "stock_routes_unchanged": true,
+    "SetRoutes_mutation_rejected": "Rejected candidate changed only temporary modemRAM flag; selected code has no SetRoutes command and fresh cold12 reports original0. Old failure preserved.",
+    "cold_boot": {
+      "passed": true,
+      "boot_id": "3fe20227-dfdc-43b6-8dbe-8e0c9a6caa37",
+      "automatic_RIL_SMS_client": true,
+      "library_sha256": "e2be6576854a9cc3d0ab2c0192ba3d89f53285ae211443d4cbca5d3005b9280f",
+      "normal_public_SMS_API": {
+        "passed": true,
+        "boot_id": "3fe20227-dfdc-43b6-8dbe-8e0c9a6caa37",
+        "actual_running_library_sha256": "e2be6576854a9cc3d0ab2c0192ba3d89f53285ae211443d4cbca5d3005b9280f",
+        "normal_public_SmsManager_API": true,
+        "actual_framework_Radio_HAL_roundtrip": true,
+        "direct_modem_QMI52_qualified_separately": true,
+        "wire_trace_not_captured": true,
+        "modem_device_not_ready_returned_without_hang": true,
+        "no_SMS_sent_or_injected": true,
+        "native_files": 113,
+        "seed_files": 4,
+        "cold_boot": true
+      },
+      "original_report_flag0_restored": true,
+      "selected_source_never_sets_routes": true,
+      "exact_new_readbacks": 4,
+      "native_files": 113,
+      "seed_files": 4,
+      "root_RO": true,
+      "normal_BatteryManager_current_reads": 3,
+      "normal_duplex_audio": {
+        "speaker_frames": 144000,
+        "passed": true,
+        "frames": 72000,
+        "reopen_rounds": 3,
+        "sample_power": 593345304
+      },
+      "normal_audio_standby": true,
+      "WiFi_Internet_and_SIM2_loaded": true,
+      "normal_timeout_ms": 60000,
+      "native_suspend_guard_retained": true,
+      "real_carrier_SMS_calls_data_not_qualified": true
+    },
+    "actual_carrier_SMS_and_delivery_reports": "unqualified; no messages sent",
+    "existing_SIM_store_route_and_SMSC_unchanged": true,
+    "no_NV_SIM_file_write_or_automatic_message_transmission": true,
+    "framework_runtime": {
+      "passed": true,
+      "boot_id": "406a4f72-3303-4404-bc19-7576dd53f160",
+      "actual_running_library_sha256": "e2be6576854a9cc3d0ab2c0192ba3d89f53285ae211443d4cbca5d3005b9280f",
+      "normal_public_SmsManager_API": true,
+      "actual_framework_Radio_HAL_roundtrip": true,
+      "direct_modem_QMI52_qualified_separately": true,
+      "wire_trace_not_captured": true,
+      "modem_device_not_ready_returned_without_hang": true,
+      "no_SMS_sent_or_injected": true,
+      "native_files": 113,
+      "seed_files": 4,
+      "cold_boot": false
+    },
+    "rollback": "/vendor/etc/superman/pf33-sms-install-rollback/rollback.sh",
+    "stock_report_flag0_restored": true,
+    "source_files": {
+      "device/nokia/superman/modem/manifest-superman-cellular.xml": "27f7bf1b110bf1b85950166ff2ec148b55c44188d4f83396ac5b1c24453321a9",
+      "device/nokia/superman/modem/qmux-probe.c": "bdb9c680aa752aab72ea523383407a97f4804565bdfc849f75cb40a3443cdf90",
+      "device/nokia/superman/modem/qmux-codec.h": "cc927bf90c933c29aef9ebfc0c0d57cf3b6db565550dc37c72a7aeb291751389",
+      "device/nokia/superman/modem/superman-modem.rc": "f98f95d9d8ca484a1e6815d607c84698fc67300127bd10ddadbcd5088dbb45d8",
+      "device/nokia/superman/modem/superman-radio.mk": "97a5c16a668a37be2be37076169a6c0270ff3fa08d6078d5c1c0f5fb2f54a81b",
+      "device/nokia/superman/modem/Android.mk": "df48621fc530fee9cce91e75f16916c99bc9ef00d395cc068732bbd9aaf4f843",
+      "device/nokia/superman/modem/pf29-rfs-snapshot.c": "83c70a76b1d39e7a17ed12f34dc89b718b4669dec120c35fb62ccc929e8a1a6d",
+      "device/nokia/superman/modem/pf29-smem.c": "a1dbb2d8a88f37fe6cd3dd42d73f10db95a68b03bc815b53a0a3e267c87adc2c",
+      "device/nokia/superman/modem/qrtr-probe.c": "a321f8cbfedbb23d6cc9914ee8b004565b9a3b9400c4956b7c215e9a41faa1d0",
+      "device/nokia/superman/modem/Android.bp": "bf8d36d84d9e4925fe8a6e26f64f6d1d6cf15e5089dd17676b8cba4be8fe3acb",
+      "device/nokia/superman/modem/pf29-mpss.c": "e3b160da8a98ca8d487ae63d0d170185839f39ac60e0bf5bc200ac3d02c61331",
+      "device/nokia/superman/modem/superman-ril.rc": "7023994ebc5a71c133415f3c1590e26e2a55fae4f7a9bcfe2419dd254af4a5fa",
+      "device/nokia/superman/modem/pf29-mba.c": "bfbf76ffaf07e22c0d901055974b8f329921c8e54c1819c1087e1ad826484a9f",
+      "device/nokia/superman/modem/ril/sim-io.h": "12177ef1bf1d37381a3abfae7dd6b9f0c4622ab137fff79c7218f2408d2063c6",
+      "device/nokia/superman/modem/ril/model.h": "a95a078ee953e44b0cc3f1fa14fb867bafc18f277454b913d37b70de46b930b3",
+      "device/nokia/superman/modem/ril/sim-io.c": "74da735186ebdbad4fdbb08dd55a8236d36dd9a2f9645839f3b63370d8efe6a0",
+      "device/nokia/superman/modem/ril/subscription.h": "de76238d249663f774bbdde3416d675a44ca21c629742d66f8a5cd6151949dd8",
+      "device/nokia/superman/modem/ril/qmux.c": "f1085bfeac56d72064a7a0efd9c1fe1672e279e50b3fa61e318211879b77c7c5",
+      "device/nokia/superman/modem/ril/superman-ril.c": "8d1a2b792eb65c607d22db5e4db8118f7053c1596a94d98ed55d1a69d13d6610",
+      "device/nokia/superman/modem/ril/model.c": "a32074525fdda6ca9d2b5904d1432ca01d27c2c6cb1322a37ac7dc9fc1cfc452",
+      "device/nokia/superman/modem/ril/sms.c": "576150ff0c3dfe4679f4abb3ab2b732cfe5ae6c4e25112332d7220f0dfac43d8",
+      "device/nokia/superman/modem/ril/calls.h": "7bfbd95679ea60b3ce1db83ed508da89983db48a4766ca1648d06dd46d39a1c0",
+      "device/nokia/superman/modem/ril/calls.c": "525d90238580d07f7e5159751a1c191fa39f9c98e48f20462146f0aeca10e8d1",
+      "device/nokia/superman/modem/ril/qmux.h": "35d650895240d173487c0afd1751c6bbd52ba652ca9b4e99f5e838874cc2ef0b",
+      "device/nokia/superman/modem/ril/subscription.c": "1028d0b53a665f904e5f41954ae7c557817ac18ba0f8170ebd1e944542610417",
+      "device/nokia/superman/modem/ril/sms.h": "650d4b65594ad62f04e330207f931b577006a2d954aeea2cc454af3b945023bd",
+      "device/nokia/superman/modem/data/qcom_bam_dmux.c": "1be2d7fddc1a3c47c6919fc83f0c6bc12ef2ae82c5fe833b2257a58b4f8ffc5d",
+      "device/nokia/superman/modem/ril/tests/sms-test.c": "41535ca163edcb691b1f4e6d4852293119e97edbe5eac092bc9f964b0347f126",
+      "device/nokia/superman/modem/ril/tests/sms-ril-test.c": "8f26bb1645f85778a7c205d13b8592b38c5b9f0c8957af85594cae4727a4bf14",
+      "device/nokia/superman/modem/ril/tests/model-test.c": "c202cdf76d53fee6a064f90046ef79d52c06d438dbd36c97f1e3d60a64b64c9a",
+      "device/nokia/superman/modem/ril/tests/native-harness.c": "09e71697cd366a81a38deeb7aba3806612e1739034a8679d8272a0f338b144e1",
+      "device/nokia/superman/modem/ril/tests/sms-transport-test.c": "5d2a75a84770efc51612c08ea14c1907fd0a61c4fda5cca5a3d28ac1b11cf784",
+      "device/nokia/superman/modem/ril/tests/include/sys/system_properties.h": "f0dde728e07b9fde5799bd2f466757b138928d884efa7669eceee72cd3845c52",
+      "device/nokia/superman/modem/ril/tests/include/android/log.h": "1e14267ddc6d73d8d95366a13dd466bfb2678d68be6fee42d40d42dcac1dd063"
+    },
+    "README_sha256": "b12befd6f826cfab997144efcc5988679f6bc915ba31c060acb99853e7344578"
+  },
+  "pf34_android_mobile_data": {
+    "library_sha256": "e3f076032e2ecc0db8075f93067e2a696b2e7d3ae57df3e16f5aac9877ac03e6",
+    "build_sources": {
+      "qmux-codec.h": "cc927bf90c933c29aef9ebfc0c0d57cf3b6db565550dc37c72a7aeb291751389",
+      "Android.bp": "a88fed31ac1d5c2c60f43e4fc1c2f4b686116c2f6282cff3e5b377678f66ab4a",
+      "ril/data-call.c": "543160efafa485dbb856fc3d9f994979b632f23da70c7b60d6495641fb080c06",
+      "ril/data-ril.h": "63131615170b06ae17f548c659f2bf6305088f5f8ba4ace4174e413b9217ef1b",
+      "ril/calls.h": "7bfbd95679ea60b3ce1db83ed508da89983db48a4766ca1648d06dd46d39a1c0",
+      "ril/data-call.h": "032e2ffc32e421b795d92839363ba89f53cbebc43b3b9e494077d27f9ef1f9b5",
+      "ril/model.c": "a32074525fdda6ca9d2b5904d1432ca01d27c2c6cb1322a37ac7dc9fc1cfc452",
+      "ril/subscription.c": "1028d0b53a665f904e5f41954ae7c557817ac18ba0f8170ebd1e944542610417",
+      "ril/sim-io.h": "12177ef1bf1d37381a3abfae7dd6b9f0c4622ab137fff79c7218f2408d2063c6",
+      "ril/calls.c": "525d90238580d07f7e5159751a1c191fa39f9c98e48f20462146f0aeca10e8d1",
+      "ril/sms.c": "576150ff0c3dfe4679f4abb3ab2b732cfe5ae6c4e25112332d7220f0dfac43d8",
+      "ril/model.h": "a95a078ee953e44b0cc3f1fa14fb867bafc18f277454b913d37b70de46b930b3",
+      "ril/sim-io.c": "74da735186ebdbad4fdbb08dd55a8236d36dd9a2f9645839f3b63370d8efe6a0",
+      "ril/qmux.c": "75686d4bf9d23a448eb842a0112f3449d84b94cf27ac2ee84440f0b2eb89d75f",
+      "ril/qmux.h": "8676c24dc73b88f86db600d27c8b49b17168511a22d6ee1925d59b1d0feb0886",
+      "ril/sms.h": "650d4b65594ad62f04e330207f931b577006a2d954aeea2cc454af3b945023bd",
+      "ril/data-link.c": "bb9932b403bcfe56105cb95c7be1d0d79a2d5207e76579a93f24be452bfc2f0d",
+      "ril/subscription.h": "de76238d249663f774bbdde3416d675a44ca21c629742d66f8a5cd6151949dd8",
+      "ril/superman-ril.c": "a78d687755ee03b1425476cd1382293551518a3b1ab07285536bd699a6a18521",
+      "ril/data-link.h": "01c90a9d0564f1a7c9881b9d112b5f522490ed8b5a243864a2a492036be6883a",
+      "ril/tests/sms-test.c": "41535ca163edcb691b1f4e6d4852293119e97edbe5eac092bc9f964b0347f126",
+      "ril/tests/sms-transport-test.c": "5d2a75a84770efc51612c08ea14c1907fd0a61c4fda5cca5a3d28ac1b11cf784",
+      "ril/tests/data-ril-test.c": "706ab76c3e9ddf2b2755eb5bcd8652f7cdf233e2552f96eaff778654cddb29a5",
+      "ril/tests/data-link-test.c": "ad50d417d748869514f700bc07674186f52efe0d848763a140781c88f0b2fddd",
+      "ril/tests/sms-ril-test.c": "29aaa9212883d8dee542df8771e71670ad3a5a37a3de99e7d2300587b24596b2",
+      "ril/tests/data-call-test.c": "58659d34c060d3f90dc704e5c136f90860810ac8227e3e453dece0141c8a1a5c",
+      "ril/tests/native-harness.c": "2b4ed9729da92479573eac7adf79ed03a649d1b694361ec777bc610809ac0cf0",
+      "ril/tests/model-test.c": "c202cdf76d53fee6a064f90046ef79d52c06d438dbd36c97f1e3d60a64b64c9a",
+      "ril/tests/async-transport-test.c": "5768a8d482dcac89de0cc560db82bf4b0cb1730fe43bd644225d212baba6dffa",
+      "ril/tests/include/android/log.h": "1e14267ddc6d73d8d95366a13dd466bfb2678d68be6fee42d40d42dcac1dd063",
+      "ril/tests/include/sys/system_properties.h": "f0dde728e07b9fde5799bd2f466757b138928d884efa7669eceee72cd3845c52"
+    },
+    "host_sanitizers": "7 regression groups PASS; link failure paths separately PASS",
+    "native_ARM": {
+      "passed": true,
+      "boot_id": "3fe20227-dfdc-43b6-8dbe-8e0c9a6caa37",
+      "files": {
+        "data-controller": "10aa6a93ea3f1c4e2270b2dca1fb8332645d88b05e4ea35a53f394037b14a603",
+        "data-model": "7bb8c889f1b60b213c32cdc0419c4aa6f92794b872f00610f92bd4e5423273e5",
+        "data-async": "3c63c33310c09a5a94d6486ab0c495b9bd6ecff05bb483899a2e9df5b78527f8"
+      },
+      "mock_modem_only": true,
+      "real_modem_or_network_not_touched": true
+    },
+    "actual_modem": {
+      "passed": true,
+      "boot_id": "3fe20227-dfdc-43b6-8dbe-8e0c9a6caa37",
+      "actual_async_WDS_query_and_owned_release": true,
+      "data_list_and_malformed_setup_deactivate_callbacks": true,
+      "actual_modem_WMS_client_setup_and_route_readback": true,
+      "routing_readback_unchanged": true,
+      "stock_report_flag_zero": true,
+      "normal_modem_queries_and75s_soak": true,
+      "no_SMS_or_call_sent": true,
+      "original_RIL_restored": true,
+      "native_files": 113,
+      "seed_files": 4,
+      "persistent_install_changed": false,
+      "build_files": {
+        "libsuperman-ril.so": "42caa0f92afa1771a19dbd959f441ff2bcee1226ba5206c4ad11ee73bcf767bf",
+        "ril-native-harness": "77421d33c268ae6af53680be0e876a4b06c07c3a3d9320d6fd33a75d5c23502f",
+        "wds-async-query": "5e5204682ca883c109510965d265b88636d09960bc2287440f71dbb25f4d39bd"
+      }
+    },
+    "interfaces": [
+      "SETUP_DATA_CALL",
+      "DEACTIVATE_DATA_CALL",
+      "DATA_CALL_LIST"
+    ],
+    "context": "single owned IPv4 BAM-DMUX channel0 wwan0",
+    "asynchronous_start_deadline_seconds": 30,
+    "cancellation_and_airplane_mode_cleanup_tested": true,
+    "SMS_indication_and_ack_interleaving_tested": true,
+    "no_persistent_modem_profile_or_foreign_link_changes": true,
+    "carrier_traffic": "unqualified; inserted SIM unregistered; no test data session initiated",
+    "framework_runtime": "pending installed backend check",
+    "cold_boot": "pending manually selected Android boot",
+    "rollback": "/vendor/etc/superman/pf34-data-install-rollback/rollback.sh"
+  }
 }
