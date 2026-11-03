@@ -1,0 +1,15 @@
+cc_library_shared {
+    name: "hwcomposer.superman_native",
+    vendor: true,
+    relative_install_path: "hw",
+    srcs: [
+        "composer/drmhwctwo.cpp",
+        "composer/compositor/*.cpp", "composer/drm/*.cpp",
+        "composer/platform/platform.cpp", "composer/platform/platformdrmgeneric.cpp",
+        "composer/utils/*.cpp",
+    ],
+    local_include_dirs: ["composer/include", "composer/platform"],
+    shared_libs: ["libcutils", "libdrm", "libhardware", "liblog", "libsync", "libui", "libutils"],
+    cflags: ["-Wall", "-Werror"],
+    cppflags: ["-DHWC2_USE_CPP11", "-DHWC2_INCLUDE_STRINGIFICATION", "-DUSE_DRM_GENERIC_IMPORTER"],
+}

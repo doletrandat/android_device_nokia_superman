@@ -1,0 +1,7 @@
+/* Reference fragment only. Packaging derives from the exact P30 binary DT via
+ * native-boot-dt.py; compiling a generic board DTS is not equivalent to P30. */
+#include "../p34/superman-native-kms.candidate.dtsi"
+&superman_firmware_kms { status = "okay"; };
+&mdss { status = "disabled"; };
+&gpu { status = "okay"; iommus = <&gpu_iommu 0>, <&gpu_iommu 1>; };
+&gpu_iommu { status = "okay"; interrupt-parent = <&intc>; };

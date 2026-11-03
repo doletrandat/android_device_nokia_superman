@@ -1,0 +1,56 @@
+--- a/device/nokia/superman/graphics/gralloc/gralloc_gbm.cpp
++++ b/device/nokia/superman/graphics/gralloc/gralloc_gbm.cpp
+@@ -135,7 +135,7 @@
+ 	return bpp;
+ }
+ 
+-static unsigned int get_pipe_bind(int usage)
++static unsigned int get_pipe_bind(int usage, bool native_scanout)
+ {
+ 	unsigned int bind = 0;
+ 
+@@ -145,8 +145,11 @@
+ 		;//bind |= GBM_BO_USE_CURSOR;
+ 	if (usage & (GRALLOC_USAGE_HW_RENDER | GRALLOC_USAGE_HW_TEXTURE))
+ 		bind |= GBM_BO_USE_RENDERING;
+-	if (usage & GRALLOC_USAGE_HW_FB)
++	if (usage & GRALLOC_USAGE_HW_FB) {
+ 		bind |= GBM_BO_USE_LINEAR | GBM_BO_USE_RENDERING;
++		if (native_scanout)
++			bind |= GBM_BO_USE_SCANOUT;
++	}
+ 	if (usage & GRALLOC_USAGE_HW_COMPOSER)
+ 		bind |= GBM_BO_USE_RENDERING;
+ 
+@@ -199,7 +202,15 @@
+ 	struct gbm_bo *bo;
+ 	struct gralloc_handle_t *handle = gralloc_handle(_handle);
+ 	int format = get_gbm_format(handle->format);
+-	int usage = get_pipe_bind(handle->usage);
++	// Unset in P30; only a future verified native startup may select this.
++	const bool native_scanout = property_get_bool("ro.superman.native_scanout", false);
++	int usage = get_pipe_bind(handle->usage, native_scanout);
++	if ((usage & GBM_BO_USE_SCANOUT) &&
++	    (handle->format != HAL_PIXEL_FORMAT_BGRA_8888 ||
++	     handle->width != 720 || handle->height != 1280)) {
++		errno = EINVAL;
++		return NULL;
++	}
+ 	int width, height;
+ 
+ 	width = handle->width;
+@@ -229,6 +240,14 @@
+ 		return NULL;
+ 	}
+ 
++	// Validate before exporting a DMA-BUF; failures have no fallback or FD.
++	if ((usage & GBM_BO_USE_SCANOUT) &&
++	    (gbm_bo_get_stride(bo) < 720 * 4 || gbm_bo_get_stride(bo) % 4 ||
++	     gbm_bo_get_modifier(bo) != 0)) {
++		gbm_bo_destroy(bo);
++		errno = EINVAL;
++		return NULL;
++	}
+ 	handle->prime_fd = gbm_bo_get_fd(bo);
+ 	if (handle->prime_fd < 0) { gbm_bo_destroy(bo); return nullptr; }
+     handle->stride = gbm_bo_get_stride(bo);

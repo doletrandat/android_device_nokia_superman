@@ -1,0 +1,122 @@
+# Loaded from /vendor/etc/init after standard system/vendor services.
+# No interface declarations: no lazy graphics HAL start in this headless profile.
+service surfaceflinger /system/bin/surfaceflinger
+    override
+    class p35_hold
+    disabled
+    oneshot
+    stdio_to_kmsg
+    user system
+    group graphics drmrpc readproc
+    capabilities SYS_NICE
+    task_profiles HighPerformance
+    socket pdx/system/vr/display/client     stream 0666 system graphics u:object_r:pdx_display_client_endpoint_socket:s0
+    socket pdx/system/vr/display/manager    stream 0666 system graphics u:object_r:pdx_display_manager_endpoint_socket:s0
+    socket pdx/system/vr/display/vsync      stream 0666 system graphics u:object_r:pdx_display_vsync_endpoint_socket:s0
+
+service vendor.hwcomposer-2-1 /vendor/bin/hw/android.hardware.graphics.composer@2.1-service
+    override
+    class p35_hold
+    disabled
+    oneshot
+    stdio_to_kmsg
+    user system
+    group graphics drmrpc
+    capabilities SYS_NICE
+    writepid /dev/cpuset/system-background/tasks
+
+service vendor.gralloc-2-0 /vendor/bin/hw/android.hardware.graphics.allocator@2.0-service
+    override
+    class p35_hold
+    disabled
+    oneshot
+    stdio_to_kmsg
+    user system
+    group graphics drmrpc
+    capabilities SYS_NICE
+
+# Vendor init is parsed after system services; preserve bootanim behavior while
+# routing early linker/runtime stderr through init's inherited kmsg descriptor.
+# SF sends ctl.start bootanim directly even when init class start is held.
+# A one-shot no-op ensures that request cannot launch the animation process.
+service bootanim /system/bin/true
+    override
+    class p35_hold
+    disabled
+    user graphics
+    group graphics audio
+    oneshot
+    ioprio rt 0
+    task_profiles MaxPerformance
+    stdio_to_kmsg
+
+# Explicit P48 release of the three native graphics consumers only. The boot
+# action runs after the core service start action; the supervisor verifies HAL
+# registration before starting SF. Zygote and bootanim have no release action.
+on boot
+    setprop vendor.superman.native_sf_boot_ready 1
+
+on property:vendor.superman.native_sf_boot_ready=1 && property:vendor.superman.native_result=hwc-pass && property:ro.superman.native_sf_candidate=p48
+    start superman-native-sf-bootstrap
+
+# Match the already verified post-fs shell invocation and explicit diagnostic
+# domain; vendor_file scripts have no automatic transition from init, even in
+# permissive mode. This does not change the global SELinux mode or policy.
+service superman-native-sf-bootstrap /system/bin/sh /vendor/bin/superman-native-startup.sh --sf-services
+    class p35_hold
+    disabled
+    oneshot
+    user root
+    seclabel u:r:init:s0
+    group root graphics drmrpc readproc
+    stdio_to_kmsg
+
+# New P67 property and sealed component manifest select this bounded producer.
+on property:vendor.superman.native_sf_result=started && property:ro.superman.native_sf_layer_candidate=p69
+    start superman-native-sf-layer
+
+service superman-native-sf-layer /system/bin/sh /vendor/bin/superman-native-startup.sh --sf-layer
+    class p35_hold
+    disabled
+    oneshot
+    user root
+    seclabel u:r:init:s0
+    group root graphics drmrpc readproc
+    stdio_to_kmsg
+
+# Independent bounded read-only charging evidence, including when GL gating
+# stops the producer. It never releases consumers or changes charging policy.
+on property:vendor.superman.native_sf_boot_ready=1 && property:ro.superman.native_sf_layer_candidate=p69
+    start superman-p69-charge-journal
+
+service superman-p69-charge-journal /system/bin/sh /vendor/bin/superman-charge-journal.sh
+    class p35_hold
+    disabled
+    oneshot
+    user root
+    seclabel u:r:init:s0
+    group root readproc
+    stdio_to_kmsg
+
+# Fresh-boot gates are mandatory; none of the normal class-start actions above
+# are restored. Boot animation remains the held no-op service.
+on property:vendor.superman.native_sf_layer_result=passed && property:ro.superman.native_ui_candidate=p69
+    start superman-native-ui
+
+service superman-native-ui /system/bin/sh /vendor/bin/superman-native-startup.sh --native-ui
+    class p35_hold
+    disabled
+    oneshot
+    user root
+    seclabel u:r:init:s0
+    group root graphics drmrpc readproc
+    stdio_to_kmsg
+
+on property:vendor.superman.native_ui_release=1 && property:vendor.superman.native_ui_result=running && property:vendor.superman.native_sf_layer_result=passed && property:ro.superman.native_ui_candidate=p69
+    class_start main
+    class_start late_start
+    start zygote
+
+# P68 paired SF reads remain unarmed until an explicit diagnostic request.
+on post-fs-data && property:ro.superman.native_sf_pair_trace=p68
+    mkdir /data/vendor/superman-sf-pair-trace 0700 system graphics

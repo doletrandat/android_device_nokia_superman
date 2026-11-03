@@ -1,0 +1,100 @@
+--- a/drivers/gpu/drm/msm/msm_drv.c
++++ b/drivers/gpu/drm/msm/msm_drv.c
+@@ -113,25 +113,40 @@
+ 	return 0;
+ }
+ 
++/* Legacy platform decision used before component/GPU initialization.
++ * GPU translation must not suppress reservation of physical scanout memory.
++ * Keep the historical A2xx exception; this candidate targets MSM8226/A3xx.
++ */
++bool msm_use_platform_mmu(struct drm_device *dev)
++{
++	struct msm_drm_private *priv = dev->dev_private;
++
++	return priv->is_a2xx || device_iommu_mapped(dev->dev) ||
++		device_iommu_mapped(dev->dev->parent);
++}
++
+ bool msm_use_mmu(struct drm_device *dev)
+ {
+ 	struct msm_drm_private *priv = dev->dev_private;
+ 
+-	/*
+-	 * a2xx comes with its own MMU
+-	 * On other platforms IOMMU can be declared specified either for the
+-	 * MDP/DPU device or for its parent, MDSS device.
++	/* GPU MMU eligibility is independent of render-only versus KMS owner.
++	 * This does not supply an address space to the display engine.
+ 	 */
+-	/* Render-only DRM registers a synthetic parent without an IOMMU.
+-     * Once the GPU is loaded, its actual address-space determines whether
+-     * page-backed GEM and external PRIME imports can be used. Do not force
+-     * them into the fallback VRAM pool merely because KMS is absent.
+-     * Before GPU initialization, retain the existing carveout fallback.
+-     */
+-    return (msm_render_only && priv->gpu && priv->gpu->aspace &&
+-            priv->gpu->aspace->mmu) || priv->is_a2xx ||
+-        device_iommu_mapped(dev->dev) ||
+-        device_iommu_mapped(dev->dev->parent);
++	return (priv->gpu && priv->gpu->aspace && priv->gpu->aspace->mmu) ||
++		msm_use_platform_mmu(dev);
++}
++
++bool msm_gem_use_vram(struct drm_device *dev, uint32_t flags)
++{
++	struct msm_drm_private *priv = dev->dev_private;
++
++	if (!msm_use_mmu(dev))
++		return true;
++	/* Never silently substitute scattered pages for physical scanout.
++	 * A missing pool remains an allocation failure in msm_gem_new().
++	 */
++	return (flags & (MSM_BO_STOLEN | MSM_BO_SCANOUT)) &&
++		(priv->vram.size || !msm_use_platform_mmu(dev));
+ }
+ 
+ static int msm_init_vram(struct drm_device *dev)
+@@ -172,7 +187,7 @@
+ 		 * Grab the entire DMA chunk carved out in early startup in
+ 		 * mach-msm:
+ 		 */
+-	} else if (!msm_use_mmu(dev)) {
++	} else if (!msm_use_platform_mmu(dev)) {
+ 		DRM_INFO("using %s VRAM carveout\n", vram);
+ 		size = memparse(vram, NULL);
+ 	}
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -268,7 +268,9 @@
+ void msm_unregister_mmu(struct drm_device *dev, struct msm_mmu *mmu);
+ 
+ struct msm_gem_address_space *msm_kms_init_aspace(struct drm_device *dev);
++bool msm_use_platform_mmu(struct drm_device *dev);
+ bool msm_use_mmu(struct drm_device *dev);
++bool msm_gem_use_vram(struct drm_device *dev, uint32_t flags);
+ 
+ int msm_ioctl_gem_submit(struct drm_device *dev, void *data,
+ 		struct drm_file *file);
+--- a/drivers/gpu/drm/msm/msm_gem.c
++++ b/drivers/gpu/drm/msm/msm_gem.c
+@@ -1232,14 +1232,11 @@
+ 
+ 	size = PAGE_ALIGN(size);
+ 
+-	if (!msm_use_mmu(dev))
+-		use_vram = true;
+-	else if ((flags & (MSM_BO_STOLEN | MSM_BO_SCANOUT)) && priv->vram.size)
+-		use_vram = true;
+-
+-    /* Existing diagnostic budget limits these events; no new global tracing. */
+-    if (msm_render_only && priv->gpu)
+-        msm_gpu_diag(priv->gpu, use_vram ? "gem_vram" : "gem_shmem", 0, size);
++	use_vram = msm_gem_use_vram(dev, flags);
++
++	/* Existing diagnostic budget limits these events; no new global tracing. */
++	if (msm_render_only && priv->gpu)
++		msm_gpu_diag(priv->gpu, use_vram ? "gem_vram" : "gem_shmem", 0, size);
+ 
+ 	if (GEM_WARN_ON(use_vram && !priv->vram.size))
+ 		return ERR_PTR(-EINVAL);

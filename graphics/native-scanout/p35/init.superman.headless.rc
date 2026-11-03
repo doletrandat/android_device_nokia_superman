@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+# Normal Android bring-up hooks. Every block-device path below is explicitly on
+# removable mmcblk1; no internal mmcblk0 partition is referenced.
+
+on early-init
+    mkdir /lumia_sd 0755 root root
+    write /dev/kmsg SUPERMAN_DIAG_EARLY_INIT
+
+on init
+    # Restore the complete phone-proven PM8226 key dependency chain.
+    insmod /vendor/lib/modules/reboot-mode.ko
+    insmod /vendor/lib/modules/qcom-pon.ko
+    insmod /vendor/lib/modules/pm8941-pwrkey.ko
+
+    # Stop fbcon from overwriting Android graphics, then apply the exact
+    # phone-proven MDP RGB0 relocation to the coherent Linux framebuffer.
+    wait /sys/class/vtconsole/vtcon1/bind 5
+    write /sys/class/vtconsole/vtcon1/bind 0
+    exec u:r:init:s0 root root -- /system/bin/sh -c "/system/bin/toybox devmem 0xfd901e14 4 0x03200000; /system/bin/toybox devmem 0xfd900618 4 0x00000008"
+
+    # One touch experiment per kernel boot, after framework boot completion.
+    setprop vendor.superman.touch_attempted 0
+
+on property:sys.boot_completed=1 && property:vendor.superman.touch_attempted=0
+    setprop vendor.superman.touch_attempted 1
+    write /dev/kmsg SUPERMAN_TOUCH_DELAY_PROBE_BEGIN
+    insmod /vendor/lib/modules/rmi_core.ko
+    insmod /vendor/lib/modules/rmi_i2c.ko startup_delay_ms=100
+    write /dev/kmsg SUPERMAN_TOUCH_DELAY_PROBE_END
+
+on fs
+    # /system was mounted by first-stage init.  Mount the persistent capture
+    # volumes here before normal services are released.
+    write /dev/kmsg SUPERMAN_DIAG_BEFORE_MOUNT_ALL
+    mount_all /vendor/etc/fstab.superman.late
+    write /dev/kmsg SUPERMAN_DIAG_AFTER_MOUNT_ALL
+    # This fstab has no encryption entry, so fs_mgr does not queue the normal
+    # nonencrypted event on this legacy layout.  Release class main explicitly.
+    trigger nonencrypted
+
+on post-fs
+    # Direct kernel firmware requests must see the installed vendor blobs.
+    # P29 verifies the GPU and selects EGL/gralloc before HAL/core/zygote start.
+    write /sys/module/firmware_class/parameters/path /vendor/firmware
+    exec u:r:init:s0 root root -- /system/bin/sh /vendor/bin/superman-native-startup.sh
+    write /dev/kmsg SUPERMAN_DIAG_POST_FS
+    # Capture and flush existing kernel records before retiring the early writer.
+    start superman-kerneldiag
+    # Keep the unjournaled boot partition read-only; diagnostics use /data.
+    exec u:r:init:s0 root root -- /system/bin/sh /vendor/bin/superman-storage-capture-mode.sh
+    start superman-diag-capture
+    # Pixel readbacks and memory probes require an explicit diagnostic run.
+    start superman-healthdiag
+
+# Memory/file probes add startup load; enable only for an explicit diagnostic run.
+# These non-persistent properties default unset. Do not run probes before boot completes.
+on property:sys.boot_completed=1 && property:debug.superman.memory_probe=1
+    start superman-memdiag
+
+on property:sys.powerctl=*
+    write /dev/kmsg SUPERMAN_DIAG_POWERCTL
+
+service superman-diag-capture /vendor/bin/superman-diag-capture.sh
+    class core
+    user root
+    group root log
+    seclabel u:r:init:s0
+    disabled
+    oneshot

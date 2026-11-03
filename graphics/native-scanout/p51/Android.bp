@@ -1,0 +1,8 @@
+// Standalone laboratory layer producer, excluded from PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-native-sf-layer-test",
+    srcs: ["sf-layer-test.cpp"],
+    shared_libs: ["libbinder", "libgui", "libui", "libutils", "libcutils", "libEGL", "libGLESv2"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}

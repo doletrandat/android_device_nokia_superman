@@ -1,0 +1,2 @@
+# External diagnostic module only; no product kernel selection.
+obj-m += superman-charge-observer.o

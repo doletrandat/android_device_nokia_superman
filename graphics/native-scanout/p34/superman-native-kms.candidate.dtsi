@@ -1,0 +1,15 @@
+/* Inactive P34 candidate. Not included by any product DTS/prebuilt boot. */
+/ {
+    superman_firmware_kms: firmware-display@fd900000 {
+        compatible = "nokia,superman-firmware-kms";
+        reg = <0xfd900000 0x23000>;
+        interrupt-parent = <&intc>;
+        interrupts = <0 72 4>; /* GIC SPI 72, level high, exclusive MDP IRQ */
+        superman,firmware-initialized;
+        superman,retained-framebuffer = <&framebuffer>;
+        superman,normal-mdss = <&mdss>;
+        status = "disabled";
+    };
+};
+/* Normal MDSS/DSI must remain disabled; simplefb stays bound as supplier. */
+&mdss { status = "disabled"; };
