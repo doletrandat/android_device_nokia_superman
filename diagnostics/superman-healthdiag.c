@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <time.h>
 #include <unistd.h>
 #ifdef __ANDROID__
@@ -142,10 +143,13 @@ static void sample_properties(void) {
 static void open_output(const char *boot) {
     struct stat mount, root;
     /* Do not populate the unmounted mount-point on a failed storage boot. */
-    if (stat("/lumia_sd", &mount) || stat("/", &root) || mount.st_dev == root.st_dev) return;
-    if (mkdir("/lumia_sd/superman-v70", 0700) && errno != EEXIST) return;
+    if (stat("/data", &mount) || stat("/", &root) || mount.st_dev == root.st_dev) return;
+    struct statvfs space;
+    if (statvfs("/data", &space) ||
+        (unsigned long long)space.f_bavail * space.f_frsize < 128ULL*1024*1024) return;
+    if (mkdir("/data/superman-v70", 0700) && errno != EEXIST) return;
     char path[192];
-    snprintf(path, sizeof(path), "/lumia_sd/superman-v70/health-%s-%ld.txt", boot, (long)getpid());
+    snprintf(path, sizeof(path), "/data/superman-v70/health-%s-%ld.txt", boot, (long)getpid());
     output = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW, 0600);
     if (output < 0) { record(1, "HEALTH_OPEN_ERROR errno=%d", errno); return; }
     record(1, "HEALTH_OPEN path=%s uptime=%lld tick_seconds=30 samples=61 byte_limit=1048576",

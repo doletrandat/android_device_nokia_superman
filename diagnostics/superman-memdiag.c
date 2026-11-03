@@ -543,9 +543,9 @@ static int open_output(void) {
     ssize_t n = fd >= 0 ? read(fd, boot, sizeof(boot) - 1) : -1;
     if (fd >= 0) close(fd);
     if (n <= 0) strcpy(boot, "unknown"); else { boot[n] = 0; boot[strcspn(boot, "\r\n")] = 0; }
-    (void)mkdir("/lumia_sd", 0755);
-    (void)mkdir("/lumia_sd/superman-v70", 0755);
-    snprintf(path, sizeof(path), "/lumia_sd/superman-v70/boot-%s", boot);
+    (void)mkdir("/data", 0755);
+    (void)mkdir("/data/superman-v70", 0755);
+    snprintf(path, sizeof(path), "/data/superman-v70/boot-%s", boot);
     /* The capture script owns this directory and may choose -1, -2, ... if
      * an earlier process already created the plain boot directory.  Wait for
      * its directory to appear; never create it here. */
@@ -553,7 +553,7 @@ static int open_output(void) {
         if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) break;
         sleep(1);
     }
-    if (wait == 30) snprintf(path, sizeof(path), "/lumia_sd/superman-v70");
+    if (wait == 30) snprintf(path, sizeof(path), "/data/superman-v70");
     snprintf(path + strlen(path), sizeof(path) - strlen(path), "/memdiag-v70-%ld.txt", (long)getpid());
     out_fd = open(path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
     emit("OUTPUT boot_id=%s path=%s fd=%d", boot, path, out_fd);
@@ -580,8 +580,8 @@ static int capture_framebuffer(void) {
     if (id >= 0) close(id);
     if (n <= 0) return 1;
     boot[n] = 0; boot[strcspn(boot, "\r\n")] = 0;
-    snprintf(dir, sizeof(dir), "/lumia_sd/superman-v70/fb-%s", boot);
-    (void)mkdir("/lumia_sd/superman-v70", 0700);
+    snprintf(dir, sizeof(dir), "/data/superman-v70/fb-%s", boot);
+    (void)mkdir("/data/superman-v70", 0700);
     if (mkdir(dir, 0700) != 0) return 1;
     snprintf(path, sizeof(path), "%s/state.txt", dir);
     out_fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
@@ -657,8 +657,8 @@ static int capture_tombstones(void) {
     if (fd >= 0) close(fd);
     if (n <= 0) { emit("TS_ERROR boot_id errno=%d", errno); return 1; }
     boot[n]=0; boot[strcspn(boot,"\r\n")]=0;
-    snprintf(dir,sizeof(dir),"/lumia_sd/superman-v70/tombstones-%s-%ld",boot,(long)getpid());
-    (void)mkdir("/lumia_sd/superman-v70",0700);
+    snprintf(dir,sizeof(dir),"/data/superman-v70/tombstones-%s-%ld",boot,(long)getpid());
+    (void)mkdir("/data/superman-v70",0700);
     if (mkdir(dir,0700)) { emit("TS_ERROR mkdir errno=%d",errno); return 1; }
     snprintf(dest,sizeof(dest),"%s/state.txt",dir);
     out_fd=open(dest,O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC,0600);

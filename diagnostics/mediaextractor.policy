@@ -1,3 +1,5 @@
-# libcutils probes memfd on this product (sys.use_memfd=true).
-# Keep the platform sandbox; extend only the required shared-memory syscall.
+# libcutils uses memfd shared memory on this product (sys.use_memfd=true).
+# Keep the platform sandbox; permit creation and sizing of that memory.
 memfd_create: 1
+# ARM32 bionic uses ftruncate64 when sizing a memfd (P5 SIGSYS capture).
+ftruncate64: 1
