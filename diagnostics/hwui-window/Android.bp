@@ -1,0 +1,20 @@
+android_app {
+    name: "SupermanHwuiWindowDiagnostic",
+    srcs: ["src/**/*.java"],
+    sdk_version: "30",
+    min_sdk_version: "29",
+    certificate: "testkey",
+    jni_libs: ["libsuperman_direct_buffer"],
+    jni_uses_platform_apis: true,
+}
+
+cc_library_shared {
+    name: "libsuperman_direct_buffer",
+    srcs: ["direct-buffer.cpp"],
+    compile_multilib: "32",
+    stl: "none",
+    shared_libs: ["libandroid", "libnativewindow", "libdl"],
+    header_libs: ["libnativebase_headers", "libcutils_headers"],
+    include_dirs: ["external/libdrm/android"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
