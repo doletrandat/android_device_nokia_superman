@@ -1,6 +1,6 @@
 /* Independent raw /dev/kmsg capture. Preserves sequence/timestamp headers,
  * including ART and init crash messages. Does not clear the kernel ring.
- * Bounded to 30 minutes / 16 MiB. SD writes can still block or be lost on reset.
+ * Bounded to 30 minutes / 16 MiB. Userdata writes can still block or be lost on reset.
  */
 #include <errno.h>
 #include <dirent.h>
@@ -41,7 +41,8 @@ static int urgent_record(const char *record) {
 
 /* Match the exact preserved r37 ramdisk wrapper, never Android init. A pidfd
  * prevents signalling a recycled PID. Missing pidfd support leaves it running.
- * Pause only after our first successful data flush; resume on normal/error exit.
+ * Retire only the logging child after the replacement data/directory is durable.
+ * Termination closes its O_DSYNC writer so the boot filesystem can remount RO.
  */
 static int wrapper_matches(int proc) {
     char comm[32] = {0}, data[4096], hex[65];
@@ -73,7 +74,7 @@ static int wrapper_matches(int proc) {
     return !strcmp(hex, "15d05d1072d3f0e133be4214aaf77ddf0b10b42006a447e06b60d63b7d737bc7");
 }
 
-static int pause_legacy_logger(const char *root) {
+static int retire_legacy_logger(const char *root) {
     DIR *dir = opendir(root);
     if (!dir) return -1;
     struct dirent *entry;
@@ -90,7 +91,8 @@ static int pause_legacy_logger(const char *root) {
         if (target >= 0) {
             struct pollfd alive = {target, POLLIN, 0};
             if (wrapper_matches(proc) && poll(&alive, 1, 0) == 0 &&
-                syscall(__NR_pidfd_send_signal, target, SIGSTOP, NULL, 0) == 0) {
+                syscall(__NR_pidfd_send_signal, target, SIGTERM, NULL, 0) == 0 &&
+                poll(&alive, 1, 2000) == 1 && (alive.revents & POLLIN)) {
                 paused = target;
                 close(proc);
                 break;
@@ -116,7 +118,7 @@ static void stop_capture(int signal_number) {
 int main(void) {
     char boot[80], path[256], buffer[8192];
     /* Batch burst records before SD IO. Flush after at most one second idle
-     * or at 64 KiB; sync every five seconds. Storage stalls remain possible. */
+     * or at 64 KiB; sync every fifteen seconds. Storage stalls remain possible. */
     static char pending[65536];
     size_t pending_size = 0;
     int fd = open("/proc/sys/kernel/random/boot_id", O_RDONLY | O_CLOEXEC);
@@ -124,11 +126,13 @@ int main(void) {
     if (fd >= 0) close(fd);
     if (n <= 0) return 1;
     boot[n] = 0; boot[strcspn(boot, "\r\n")] = 0;
-    (void)mkdir("/lumia_sd/superman-v70", 0700);
+    struct stat mount, root;
+    if (stat("/data", &mount) || stat("/", &root) || mount.st_dev == root.st_dev) return 2;
+    (void)mkdir("/data/superman-v70", 0700);
     struct statvfs space;
-    if (statvfs("/lumia_sd/superman-v70", &space) ||
-        (unsigned long long)space.f_bavail * space.f_frsize < 32ULL*1024*1024) return 2;
-    snprintf(path, sizeof(path), "/lumia_sd/superman-v70/kernel-live-%s-%ld.txt",
+    if (statvfs("/data/superman-v70", &space) ||
+        (unsigned long long)space.f_bavail * space.f_frsize < 128ULL*1024*1024) return 2;
+    snprintf(path, sizeof(path), "/data/superman-v70/kernel-live-%s-%ld.txt",
              boot, (long)getpid());
     int input = open("/dev/kmsg", O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (input < 0) return 3;
@@ -141,7 +145,7 @@ int main(void) {
     sigemptyset(&action.sa_mask);
     int can_handoff = sigaction(SIGTERM, &action, NULL) == 0 &&
                       sigaction(SIGINT, &action, NULL) == 0;
-    int directory = open("/lumia_sd/superman-v70", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    int directory = open("/data/superman-v70", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
     int directory_ready = directory >= 0 && fsync(directory) == 0;
     if (directory >= 0) close(directory);
     can_handoff = can_handoff && directory_ready && kernel >= 0;
@@ -187,23 +191,18 @@ int main(void) {
             if (put(output, pending, pending_size)) { status = 6; break; }
             bytes += pending_size; pending_size = 0; flushed = now;
         }
-        if (now - synced >= 5) {
+        if (now - synced >= (handoff_attempted ? 15 : 1)) {
             if (fdatasync(output)) { status = 8; break; }
             synced = now;
             if (!handoff_attempted && bytes > 0) {
                 handoff_attempted = 1;
                 handoff_note(kernel, "replacement-flushed");
-                if (can_handoff) legacy = pause_legacy_logger("/proc");
-                handoff_note(kernel, legacy >= 0 ? "legacy-stop-requested" : "legacy-retained");
+                if (can_handoff) legacy = retire_legacy_logger("/proc");
+                handoff_note(kernel, legacy >= 0 ? "legacy-exit-confirmed" : "legacy-not-retired");
             }
         }
     }
-    /* Restore early capture before final IO, which can itself block. */
-    if (legacy >= 0) {
-        int rc = (int)syscall(__NR_pidfd_send_signal, legacy, SIGCONT, NULL, 0);
-        handoff_note(kernel, rc == 0 ? "legacy-resume-requested" : "legacy-resume-failed");
-        close(legacy);
-    }
+    if (legacy >= 0) close(legacy);
     if (kernel >= 0) close(kernel);
     if (status == 0 && pending_size && put(output, pending, pending_size)) status = 6;
     if (fsync(output)) status = 8;

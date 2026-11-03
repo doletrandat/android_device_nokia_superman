@@ -1,28 +1,35 @@
 #!/system/bin/sh
-# Controlled diagnostic comparison: only the removable capture filesystem.
-# Keep explicit collector flushes and all /data durability settings unchanged.
+# Protect the unjournaled removable boot partition after startup validation.
+# Log collectors use journaled /data. No filesystem repair or block writes here.
 PATH=/system/bin
 export PATH
 while read -r source target type options rest; do
     [ "$target" = /lumia_sd ] || continue
     case "$source:$type" in
         /dev/mmcblk1p1:ext2|/dev/block/mmcblk1p1:ext2) ;;
-        *) echo "SUPERMAN_CAPTURE_ASYNC rejected source=$source type=$type" > /dev/kmsg; exit 1 ;;
+        *) echo "SUPERMAN_BOOT_RO rejected source=$source type=$type" > /dev/kmsg; exit 1 ;;
     esac
-    echo "SUPERMAN_CAPTURE_ASYNC begin options=$options" > /dev/kmsg
-    mount -t ext2 -o remount,async "$source" /lumia_sd || {
-        echo "SUPERMAN_CAPTURE_ASYNC remount_failed" > /dev/kmsg
-        exit 1
-    }
+    # The inherited ramdisk logger holds a writable FD. The kernel collector
+    # confirms that exact child exited after its replacement records are durable.
+    # A missed/unsupported handoff fails closed: no signal-by-name or forced mount.
+    attempt=0
+    while ! mount -t ext2 -o remount,ro "$source" /lumia_sd; do
+        attempt=$((attempt+1))
+        [ "$attempt" -lt 10 ] || {
+            echo "SUPERMAN_BOOT_RO remount_failed" > /dev/kmsg
+            exit 1
+        }
+        sleep 1
+    done
     while read -r actual destination filesystem flags remainder; do
         [ "$destination" = /lumia_sd ] || continue
+        [ "$actual" = "$source" ] && [ "$filesystem" = ext2 ] || exit 1
         case ",$flags," in
-            *,sync,*) echo "SUPERMAN_CAPTURE_ASYNC verification_failed flags=$flags" > /dev/kmsg; exit 1 ;;
+            *,ro,*) echo "SUPERMAN_BOOT_RO verified flags=$flags" > /dev/kmsg; exit 0 ;;
         esac
-        echo "SUPERMAN_CAPTURE_ASYNC verified source=$actual flags=$flags" > /dev/kmsg
-        exit 0
+        exit 1
     done < /proc/mounts
     exit 1
 done < /proc/mounts
-echo "SUPERMAN_CAPTURE_ASYNC mount_missing" > /dev/kmsg
+echo "SUPERMAN_BOOT_RO mount_missing" > /dev/kmsg
 exit 1

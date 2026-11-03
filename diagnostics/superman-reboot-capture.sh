@@ -60,6 +60,28 @@ reset_state() {
         timeout -k 1 2 getprop "$prop"
         echo "status=$?"
     done
+    echo "--- USB framework and FunctionFS ---"
+    for prop in ro.superman.mainline_usb sys.usb.controller sys.usb.configfs \
+        sys.usb.config sys.usb.state sys.usb.ffs.ready init.svc.adbd; do
+        echo "property=$prop"
+        timeout -k 1 2 getprop "$prop"
+    done
+    timeout -k 1 3 ls -l /sys/class/udc /dev/usb-ffs/adb /dev/usb-ffs/mtp \
+        /dev/usb-ffs/ptp /config/usb_gadget/g1/configs/b.1
+    for node in /config/usb_gadget/g1/UDC /config/usb_gadget/g1/idProduct; do
+        echo "path=$node"
+        timeout -k 1 2 cat "$node"
+        echo "status=$?"
+    done
+    udc_count=0
+    for node in /sys/class/udc/*/state; do
+        [ -f "$node" ] || continue
+        [ "$udc_count" -lt 4 ] || break
+        udc_count=$((udc_count + 1))
+        echo "path=$node"
+        timeout -k 1 2 cat "$node"
+        echo "status=$?"
+    done
     echo "--- pstore mounts ---"
     timeout -k 1 3 cat /proc/mounts
     echo "mounts_status=$?"
