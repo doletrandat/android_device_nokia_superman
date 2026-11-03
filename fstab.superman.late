@@ -1,4 +1,4 @@
 # Second-stage mounts only. /system and /lumia_sd are already mounted by the
 # preserved boot ramdisk before this file is consumed.
 # Disable online discard for the r20 storage-wait experiment; keep integrity checks.
-/dev/block/mmcblk1p3 /data ext4 noatime,nosuid,nodev,nodiscard,errors=panic wait,check
+/dev/block/mmcblk1p3 /data ext4 noatime,nosuid,nodev,nodiscard,errors=remount-ro wait,check
