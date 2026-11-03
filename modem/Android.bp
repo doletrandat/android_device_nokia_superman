@@ -1,0 +1,32 @@
+cc_binary {
+    name: "superman-qrtr-probe",
+    vendor: true,
+    srcs: ["qrtr-probe.c"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-qmux-probe",
+    vendor: true,
+    srcs: ["qmux-probe.c"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Generated modem hashes and the independently acquired boot contract are
+// supplied by the qualified SD deployment, never from guessed generic defaults.
+sh_binary {
+    name: "superman-modem-start",
+    vendor: true,
+    src: "superman-modem-start.sh",
+    filename: "superman-modem-start.sh",
+    init_rc: ["superman-modem.rc"],
+}
+
+cc_library_shared {
+    name: "libsuperman-ril",
+    vendor: true,
+    srcs: ["ril/superman-ril.c", "ril/qmux.c", "ril/model.c", "ril/sim-io.c", "ril/calls.c", "ril/subscription.c", "ril/sms.c", "ril/data-call.c", "ril/data-link.c"],
+    include_dirs: ["hardware/ril/include"],
+    shared_libs: ["liblog"],
+    cflags: ["-DRIL_SHLIB", "-Wall", "-Wextra", "-Werror"],
+}
