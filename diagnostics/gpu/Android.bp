@@ -1,0 +1,106 @@
+cc_binary {
+    name: "superman-gpu-smoke",
+    vendor: true,
+    srcs: ["gpu-smoke.cpp"],
+    shared_libs: ["libdl"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-gpu-buffer-test",
+    vendor: true,
+    srcs: ["gpu-buffer-test.cpp"],
+    shared_libs: ["libdl", "libhardware", "libcutils"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-gpu-window-test",
+    vendor: true,
+    srcs: ["gpu-window-test.cpp"],
+    include_dirs: ["device/nokia/superman/graphics/gralloc"],
+    shared_libs: ["libdl", "libhardware", "libcutils", "libsync", "libnativewindow"],
+    header_libs: ["gl_headers", "libnativebase_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-gpu-queue-test",
+    srcs: ["gpu-queue-test.cpp"],
+    shared_libs: ["libdl", "libgui", "libui", "libutils", "libhardware", "libcutils", "libnativewindow"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-gpu-binder-test",
+    srcs: ["gpu-binder-test.cpp"],
+    shared_libs: ["libdl", "libgui", "libui", "libutils", "libbinder", "libcutils", "libbase", "libhidlbase", "libhardware", "libsync", "libsuperman_graphics_hal", "android.hardware.graphics.mapper@2.0", "android.hardware.graphics.allocator@2.0"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+cc_binary {
+    name: "superman-gpu-startup-check",
+    vendor: true,
+    srcs: ["gpu-startup-check.cpp"],
+    shared_libs: ["libdl", "libhardware", "libsync", "libcutils"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+cc_binary {
+    name: "superman-hwc-bridge-test",
+    vendor: true,
+    srcs: ["hwc-bridge-test.cpp"],
+    shared_libs: ["libhwc2onfbadapter", "libhardware", "libcutils"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Explicit private-buffer correctness test; not part of PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-gpu-offscreen-test",
+    vendor: true,
+    srcs: ["gpu-offscreen-test.cpp"],
+    shared_libs: ["libdl"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Standalone read-only display inventory; not part of PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-display-query",
+    vendor: true,
+    srcs: ["display-query.cpp"],
+    shared_libs: ["libdrm"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Standalone inherited-state inventory; not part of PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-display-handoff-query",
+    vendor: true,
+    srcs: ["display-handoff-query.cpp"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Three private GPU clients with bounded idle barriers; not PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-gpu-context-cycle-test",
+    vendor: true,
+    srcs: ["gpu-context-cycle-test.cpp"],
+    shared_libs: ["libdl"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
+
+// Explicit process-local Freedreno debug comparison; not PRODUCT_PACKAGES.
+cc_binary {
+    name: "superman-gpu-clear-debug-test",
+    vendor: true,
+    srcs: ["gpu-clear-debug-test.cpp"],
+    shared_libs: ["libdl"],
+    header_libs: ["gl_headers"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
