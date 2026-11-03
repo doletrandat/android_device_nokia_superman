@@ -1,0 +1,23 @@
+--- a/src/egl/drivers/dri2/platform_android.c
++++ b/src/egl/drivers/dri2/platform_android.c
+@@ -815,12 +815,19 @@
+     * (chadversary) testing on Android Nougat, this was good enough to pacify
+     * the buggy clients.
+     */
++   /* The native Superman client target is BGRA; keep RGBA configs first. */
++   char bgra_property[PROP_VALUE_MAX] = {0};
++   __system_property_get("ro.superman.bgra_window_configs", bgra_property);
++   const char *bgra_test = getenv("SUPERMAN_MESA_BGRA_WINDOWS");
++   const bool allow_bgra = !strcmp(bgra_property, "1") ||
++                          !strcmp(bgra_property, "true") ||
++                          (bgra_test && !strcmp(bgra_test, "1"));
+    bool has_rgba = false;
+    for (int i = 0; i < ARRAY_SIZE(visuals); i++) {
+       /* Only enable BGRA configs when RGBA is not available. BGRA configs are
+        * buggy on stock Android.
+        */
+-      if (visuals[i].hal_format == HAL_PIXEL_FORMAT_BGRA_8888 && has_rgba)
++      if (visuals[i].hal_format == HAL_PIXEL_FORMAT_BGRA_8888 && has_rgba && !allow_bgra)
+          continue;
+       for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
+          const struct gl_config *gl_config =

@@ -1,0 +1,23 @@
+--- a/src/gallium/drivers/freedreno/a3xx/fd3_resource.c
++++ b/src/gallium/drivers/freedreno/a3xx/fd3_resource.c
+@@ -16,6 +16,11 @@
+ 
+    /* 32 pixel alignment */
+    fdl_set_pitchalign(&rsc->layout, fdl_cpp_shift(&rsc->layout) + 5);
++   /* Tiled pitches address strips of four pixel rows. */
++   if (rsc->layout.tile_mode) {
++      rsc->layout.pitch0 *= 4;
++      rsc->layout.pitchalign += 2;
++   }
+ 
+    for (level = 0; level <= prsc->last_level; level++) {
+       struct fdl_slice *slice = fd_resource_slice(rsc, level);
+@@ -28,6 +33,8 @@
+       }
+ 
+       uint32_t nblocksy = util_format_get_nblocksy(format, height);
++      if (rsc->layout.tile_mode)
++         nblocksy /= 4;
+ 
+       slice->offset = size;
+       /* 1d array and 2d array textures must all have the same layer size

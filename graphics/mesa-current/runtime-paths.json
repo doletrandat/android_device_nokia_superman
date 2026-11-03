@@ -1,0 +1,11 @@
+{
+  "/vendor/lib/egl/libGLES_mesa.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libGLES_mesa.so",
+  "/vendor/lib/libgbm_mesa.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libgbm_mesa.so",
+  "/vendor/lib/dri/gallium_dri.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libgallium_dri.so",
+  "/vendor/lib/libgallium_dri.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libgallium_dri.so",
+  "/vendor/lib/libEGL_mesa.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libEGL_mesa.so",
+  "/vendor/lib/libGLESv1_CM_mesa.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libGLESv1_CM_mesa.so",
+  "/vendor/lib/libGLESv2_mesa.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libGLESv2_mesa.so",
+  "/vendor/lib/libdrm.so": "device/nokia/superman/graphics/mesa-current/prebuilt/libdrm.so",
+  "/vendor/lib/gbm/dri_gbm.so": "device/nokia/superman/graphics/mesa-current/prebuilt/gbm/dri_gbm.so"
+}

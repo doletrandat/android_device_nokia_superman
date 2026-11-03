@@ -1,0 +1,6 @@
+{
+  "url": "https://archive.mesa3d.org/mesa-26.2.5.tar.xz",
+  "sha256": "794b3d1729075dae7ebd47c7283b7ca0cdb5dec668f7f11cc0a5d82f6138a0a5",
+  "bytes": 68652756,
+  "checksum_source": "https://docs.mesa3d.org/relnotes/26.2.5.html"
+}

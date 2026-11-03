@@ -1,0 +1,12 @@
+[
+  {
+    "url": "https://android.googlesource.com/platform/prebuilts/build-tools/+/refs/heads/main/linux-x86/bin/bison?format=TEXT",
+    "bytes": 546984,
+    "sha256": "7a74eff9d52e3096cb86510171e6f174881dd5d3154f038fdcbc4769b276da5f"
+  },
+  {
+    "url": "https://android.googlesource.com/platform/prebuilts/build-tools/+archive/refs/heads/main/common/bison.tar.gz",
+    "bytes": 210851,
+    "sha256": "76ffb18cb449108753d0ce8b1628006e5190df2d0a4e682c47ea6c6abce45292"
+  }
+]

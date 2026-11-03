@@ -1,0 +1,16 @@
+{
+  "selected": false,
+  "Mesa_candidate": "26.2.5 + P151 shared BO alias correction",
+  "native_correctness": "six native cases +60 RE +shared BO hazard tests PASS",
+  "physical_performance_result": "USER worse; REJECTED",
+  "human_capture_updates_per_second": 50.19244578843184,
+  "comparison": "different scene from P149; not controlled A/B",
+  "active_phone": "P149 restored and verified in fresh SF/SystemUI/Launcher processes",
+  "product_default": "P149/legacy Mesa retained",
+  "source_and_build": "preserved inactive; do not deploy as accepted",
+  "restored_activation": {
+    "surfaceflinger": "7793",
+    "com.android.systemui": "8191",
+    "com.android.launcher3": "8335"
+  }
+}

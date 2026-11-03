@@ -1,0 +1,34 @@
+--- a/src/gallium/drivers/freedreno/freedreno_resource.c
++++ b/src/gallium/drivers/freedreno/freedreno_resource.c
+@@ -355,7 +355,8 @@
+    struct fd_batch *batch;
+    bool fallback = false;
+ 
+-   if (prsc->next)
++   /* Renaming shared storage disconnects its other imports. */
++   if (prsc->next || rsc->b.is_shared)
+       return false;
+ 
+    /* Flush any pending batches writing the resource before we go mucking around
+@@ -848,6 +849,12 @@
+ 
+    tc_assert_driver_thread(ctx->tc);
+ 
++   if (!(usage & PIPE_MAP_UNSYNCHRONIZED)) {
++      fd_screen_lock(ctx->screen);
++      fd_batch_resource_flush_aliases(ctx, NULL, rsc, !!(usage & PIPE_MAP_WRITE));
++      fd_screen_unlock(ctx->screen);
++   }
++
+    /* Strip the read flag if the buffer has been invalidated (or is freshly
+     * created). Avoids extra staging blits of undefined data on glTexSubImage of
+     * a fresh DEPTH_COMPONENT or STENCIL_INDEX texture being stored as z24s8.
+@@ -868,7 +875,7 @@
+                      prsc, level, usage, box->width, box->height, box->x, box->y);
+    }
+ 
+-   if (usage & PIPE_MAP_DISCARD_WHOLE_RESOURCE) {
++   if ((usage & PIPE_MAP_DISCARD_WHOLE_RESOURCE) && !rsc->b.is_shared) {
+       invalidate_resource(rsc, usage);
+    } else {
+       unsigned op = translate_usage(usage);

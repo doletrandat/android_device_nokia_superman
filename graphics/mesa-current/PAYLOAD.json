@@ -1,0 +1,42 @@
+[
+  {
+    "name": "libGLESv1_CM_mesa.so",
+    "sha256": "750b65fbaf5ff77b6a8af28f964d2c671dd436ed0acfa66e0ad5d5130b8b8f29",
+    "bytes": 28540
+  },
+  {
+    "name": "libgbm_mesa.so",
+    "sha256": "f4e4476cc43d34f0f9f97978076a2e2f72e5ba470396bce9da5229acaaf436fd",
+    "bytes": 14980
+  },
+  {
+    "name": "libgallium_dri.so",
+    "sha256": "4aff5c109ea4e21129cd271d2a1e991f5c4d3eacad01edc1cb512a665a3ba41f",
+    "bytes": 20865536
+  },
+  {
+    "name": "libGLES_mesa.so",
+    "sha256": "d099fa72be8ad271db0d5d7ab534ac7038e020337aabc82d4ee3f33c38959114",
+    "bytes": 5500
+  },
+  {
+    "name": "libdrm.so",
+    "sha256": "d49dea396a0166b12e442f85383372486b5f61e1d76b1d3ad90765ce237c1c4f",
+    "bytes": 87084
+  },
+  {
+    "name": "libGLESv2_mesa.so",
+    "sha256": "440dfedd66404cbddf72aa0966d904e9c2e5615dbf6011cecbe28835fe0c1064",
+    "bytes": 70760
+  },
+  {
+    "name": "libEGL_mesa.so",
+    "sha256": "1418a60d762936a04cedd6263d66eb3a92b7af6bb59665b637fba7c71a02aa35",
+    "bytes": 297772
+  },
+  {
+    "name": "gbm/dri_gbm.so",
+    "sha256": "50819aac668d38e70f97cf8994e1edad74b2b6cdbf0996341d91df616fd798dc",
+    "bytes": 89876
+  }
+]

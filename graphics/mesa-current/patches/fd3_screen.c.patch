@@ -1,0 +1,36 @@
+--- a/src/gallium/drivers/freedreno/a3xx/fd3_screen.c
++++ b/src/gallium/drivers/freedreno/a3xx/fd3_screen.c
+@@ -89,6 +89,23 @@
+ };
+ /* clang-format on */
+ 
++/* BGRA tiling swaps channels; keep it and unqualified layouts linear. */
++static unsigned
++fd3_tile_mode_default(const struct pipe_resource *tmpl)
++{
++   if (tmpl->target != PIPE_TEXTURE_2D || tmpl->last_level ||
++       tmpl->array_size != 1 || tmpl->nr_samples > 1)
++      return LINEAR;
++
++   switch (tmpl->format) {
++   case PIPE_FORMAT_A8_UNORM:
++   case PIPE_FORMAT_R8G8B8A8_UNORM:
++      return fd3_tile_mode(tmpl);
++   default:
++      return LINEAR;
++   }
++}
++
+ void
+ fd3_screen_init(struct pipe_screen *pscreen)
+ {
+@@ -102,6 +119,9 @@
+    screen->layout_resource = fd3_layout_resource;
+    if (FD_DBG(TTILE))
+       screen->tile_mode = fd3_tile_mode;
++   /* Kernel CHIP_ID includes a fuse id above the hardware revision. */
++   else if ((screen->chip_id & UINT64_C(0xffffffff)) == 0x03000512)
++      screen->tile_mode = fd3_tile_mode_default;
+ 
+    screen->primtypes = primtypes;
+ }

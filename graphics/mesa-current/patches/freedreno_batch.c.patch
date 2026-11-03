@@ -1,0 +1,60 @@
+--- a/src/gallium/drivers/freedreno/freedreno_batch.c
++++ b/src/gallium/drivers/freedreno/freedreno_batch.c
+@@ -508,12 +508,48 @@
+    }
+ }
+ 
++/* EGLImage imports can alias one BO without sharing resource tracking. */
++void
++fd_batch_resource_flush_aliases(struct fd_context *ctx, struct fd_batch *batch,
++                                struct fd_resource *rsc, bool write)
++{
++   struct fd_screen *screen = ctx->screen;
++   struct fd_batch_cache *cache = &screen->batch_cache;
++   struct fd_batch *other;
++
++   fd_screen_assert_locked(screen);
++   if (!rsc->b.is_shared || !rsc->bo)
++      return;
++restart:
++   foreach_batch (other, cache, cache->batch_mask) {
++      /* Other contexts synchronize through their explicit flush/barrier. */
++      if (other == batch || other->ctx != ctx)
++         continue;
++      set_foreach (other->resources, entry) {
++         struct fd_resource *alias = (struct fd_resource *)entry->key;
++         if (alias == rsc || alias->bo != rsc->bo ||
++             (!write && alias->track->write_batch != other))
++            continue;
++         struct fd_batch *hold = NULL;
++         fd_batch_reference_locked(&hold, other);
++         fd_screen_unlock(screen);
++         fd_batch_flush(hold);
++         fd_screen_lock(screen);
++         fd_bc_invalidate_batch(hold, false);
++         fd_batch_reference_locked(&hold, NULL);
++         goto restart;
++      }
++   }
++}
++
+ void
+ fd_batch_resource_write(struct fd_batch *batch, struct fd_resource *rsc)
+ {
+    struct fd_resource_tracking *track = rsc->track;
+ 
+    fd_screen_assert_locked(batch->ctx->screen);
++
++   fd_batch_resource_flush_aliases(batch->ctx, batch, rsc, true);
+ 
+    DBG("%p: write %p", batch, rsc);
+ 
+@@ -579,6 +615,8 @@
+ {
+    fd_screen_assert_locked(batch->ctx->screen);
+ 
++   fd_batch_resource_flush_aliases(batch->ctx, batch, rsc, false);
++
+    if (rsc->stencil)
+       fd_batch_resource_read(batch, rsc->stencil);
+ 

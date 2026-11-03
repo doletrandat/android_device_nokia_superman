@@ -1,0 +1,32 @@
+[
+  {
+    "file": "src/gallium/drivers/freedreno/a3xx/fd3_resource.c",
+    "before_sha256": "3224a2cec8fe9ea3795c1666e1d6d6e22ab084ebcd867cf688fe1ceac65df420",
+    "after_sha256": "b9f4f75eed852b020fc6e114fcf78f915ad70edc15a4152c35cdd2a09bf514dd"
+  },
+  {
+    "file": "src/gallium/drivers/freedreno/a3xx/fd3_screen.c",
+    "before_sha256": "dfd60f6b17bbc6fa1f3e973e854550570c036cfa40ac7a0e4c4d2262c1b46365",
+    "after_sha256": "8cbc004399d55e350cd5f7cfc01bd5f3212bafbeff8ddf0206ead1d3bda7dcb0"
+  },
+  {
+    "file": "src/egl/drivers/dri2/platform_android.c",
+    "before_sha256": "450e45d80d8b860a50eac02ed729dc45e1df7861193d08c5c36676355b7c7171",
+    "after_sha256": "3e4157164914d16916c55030a68d005dfd745ecf0a61a2585bd6020b013da078"
+  },
+  {
+    "file": "src/gallium/drivers/freedreno/freedreno_batch.c",
+    "before_sha256": "7c0710c9a17a83848732884d120e3e4cd603e3bdd57fbf79d2bcbe2f19ec37d1",
+    "after_sha256": "a149ea7624479df644f517103d5b2549422e80986ec5c2dc38ff51b306a0bf1e"
+  },
+  {
+    "file": "src/gallium/drivers/freedreno/freedreno_batch.h",
+    "before_sha256": "32534b7ad4a3a7f299507d7b4af244435df7aac656c76b31e7d634577241a258",
+    "after_sha256": "c17f6839e7f09b529f5fc22fa86c70ef5c64df7698483a3d394c0b2d93f9b76f"
+  },
+  {
+    "file": "src/gallium/drivers/freedreno/freedreno_resource.c",
+    "before_sha256": "a6e17b796fe2b4a0e056f5b637d9f3d686a94af14467c4dd709c3de02c1275c7",
+    "after_sha256": "8c4bcd18bf4835f442e39ef1406f4266d2c01682640320c0b2b320937ba1ffce"
+  }
+]

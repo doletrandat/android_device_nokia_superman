@@ -1,0 +1,11 @@
+--- a/src/gallium/drivers/freedreno/freedreno_batch.h
++++ b/src/gallium/drivers/freedreno/freedreno_batch.h
+@@ -314,6 +314,8 @@
+ void fd_batch_flush(struct fd_batch *batch) assert_dt;
+ bool fd_batch_has_dep(struct fd_batch *batch, struct fd_batch *dep) assert_dt;
+ void fd_batch_add_dep(struct fd_batch *batch, struct fd_batch *dep) assert_dt;
++void fd_batch_resource_flush_aliases(struct fd_context *ctx, struct fd_batch *batch,
++                                     struct fd_resource *rsc, bool write) assert_dt;
+ void fd_batch_resource_write(struct fd_batch *batch,
+                              struct fd_resource *rsc) assert_dt;
+ void fd_batch_resource_read_slowpath(struct fd_batch *batch,
