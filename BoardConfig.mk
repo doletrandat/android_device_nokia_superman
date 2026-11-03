@@ -60,3 +60,6 @@ BOARD_SEPOLICY_DIRS += device/nokia/superman/sepolicy
 
 # Keep authentication disabled for the headless recovery diagnostic image.
 ALLOW_ADBD_NO_AUTH := 1
+
+# Compile Freedreno for isolated GPU validation before selecting it for Android.
+BOARD_GPU_DRIVERS := freedreno

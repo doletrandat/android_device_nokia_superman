@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Nokia Lumia 730 (Superman) Android 11 bring-up target.
 
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_minimal.mk)
+# Stock handheld apps, providers and navigation-mode overlays.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/handheld_system.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/media_vendor.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/handheld_product.mk)
+$(call inherit-product, frameworks/base/data/sounds/AllAudio.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/handheld_system_ext.mk)
 $(call inherit-product, frameworks/base/data/keyboards/keyboards.mk)
 $(call inherit-product-if-exists, frameworks/base/data/fonts/fonts.mk)

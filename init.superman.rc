@@ -28,12 +28,6 @@ on property:sys.boot_completed=1 && property:vendor.superman.touch_attempted=0
     insmod /vendor/lib/modules/rmi_i2c.ko startup_delay_ms=100
     write /dev/kmsg SUPERMAN_TOUCH_DELAY_PROBE_END
 
-on boot
-    # init discovers the actual UDC name from /sys/class/udc.
-    setprop sys.usb.configfs 1
-    setprop persist.sys.usb.config adb
-    setprop sys.usb.config adb
-
 on fs
     # /system was mounted by first-stage init.  Mount the persistent capture
     # volumes here before normal services are released.
@@ -45,16 +39,23 @@ on fs
     trigger nonencrypted
 
 on post-fs
+    # Direct kernel firmware requests must see the installed vendor blobs.
+    # P29 verifies the GPU and selects EGL/gralloc before HAL/core/zygote start.
+    write /sys/module/firmware_class/parameters/path /vendor/firmware
+    exec u:r:init:s0 root root -- /system/bin/sh /vendor/bin/superman-gpu-startup.sh
     write /dev/kmsg SUPERMAN_DIAG_POST_FS
-    # Apply only to the verified external capture mount; preserve boot ramdisk.
+    # Capture and flush existing kernel records before retiring the early writer.
+    start superman-kerneldiag
+    # Keep the unjournaled boot partition read-only; diagnostics use /data.
     exec u:r:init:s0 root root -- /system/bin/sh /vendor/bin/superman-storage-capture-mode.sh
     start superman-diag-capture
-    start superman-memdiag
-    # Late paired shell captures replace the early SD-streaming fb collector.
-    # Service definition retained for explicit diagnostic use.
-    start superman-tombdiag
+    # Pixel readbacks and memory probes require an explicit diagnostic run.
     start superman-healthdiag
-    start superman-kerneldiag
+
+# Memory/file probes add startup load; enable only for an explicit diagnostic run.
+# These non-persistent properties default unset. Do not run probes before boot completes.
+on property:sys.boot_completed=1 && property:debug.superman.memory_probe=1
+    start superman-memdiag
 
 on property:sys.powerctl=*
     write /dev/kmsg SUPERMAN_DIAG_POWERCTL
@@ -65,3 +66,4 @@ service superman-diag-capture /vendor/bin/superman-diag-capture.sh
     group root log
     seclabel u:r:init:s0
     disabled
+    oneshot

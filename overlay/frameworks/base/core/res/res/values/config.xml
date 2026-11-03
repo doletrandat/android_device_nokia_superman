@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lumia bring-up needs visible Back, Home and Recents controls. -->
+    <bool name="config_showNavigationBar">true</bool>
+    <!-- 0 selects the standard three-button navigation layout. -->
+    <integer name="config_navBarInteractionMode">0</integer>
+</resources>

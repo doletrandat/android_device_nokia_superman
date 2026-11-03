@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Schedutil repeatedly drops frequency within a frame on this unboosted port.
+# Keep the existing qualified maximum until deadline-aware boosting is available.
+on property:sys.boot_completed=1
+    write /sys/devices/system/cpu/cpufreq/policy0/scaling_governor performance
