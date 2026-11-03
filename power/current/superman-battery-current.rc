@@ -1,0 +1,14 @@
+on post-fs-data
+    start superman-battery-current
+
+service superman-battery-current /system/bin/sh /vendor/bin/superman-battery-current.sh
+    class late_start
+    user root
+    group root system
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+# BatteryMonitor discovers current_now once at initialization; reconnect Health.
+on property:vendor.superman.battery_current.state=ready
+    restart health-hal-2-1

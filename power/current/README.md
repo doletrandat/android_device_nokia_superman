@@ -1,0 +1,9 @@
+# Lumia 730 measured battery current
+
+The internal PM8226 IADC channel was physically qualified against a USB unplug/reconnect: median +1.271 mA on USB, -258.796 mA on battery, +1.271 mA after reconnect. Negative means discharge. Corrected signed-offset ADC calibration is retained from PF29; the external shunt is not qualified.
+
+The companion module exposes current_now on the existing smbb-bif battery. The existing Health HAL discovers this file after one startup restart and BatteryManager.CURRENT_NOW reads signed microamps. No charger policy, capacity percentage, charge counter, voltage limit, thermal protection or suspend policy is changed.
+
+The oneshot loader checks board, SD CID, exact running kernel/DT/config and module hashes, waits at most 30 seconds for the existing battery, then loads the provider and bridge. A per-boot lock prevents retries after failure. Cleanup removes only its own modules and retains the provider if the bridge cannot be removed. The module holds device references and kernfs removal drains readers. Driver errors propagate; no fabricated zero sample.
+
+Evidence: .codex-restart/artifacts/pf32-bluetooth-usability-20261102. CURRENT-BUILD.json records the external -j20 build and unchanged kernel artifacts; CURRENT-ABI.json checks every import against the actual linked kernel/provider. current-function-tests-03 uses actual driver functions under ASan/UBSan. current-integration-runtime-01 confirms three attach/remove cycles and three normal Android API reads. Automatic startup, Health/BatteryManager reads,32selectedreadbacks/native113/seed4 and normal Android duplex audio/reopening/standby passed on cold11 boot 406a4f72-3303-4404-bc19-7576dd53f160. The original harness failure is preserved: it checked for standby before AudioFlinger finished draining; a bounded standby wait and reopening passed.

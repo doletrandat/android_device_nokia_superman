@@ -1,0 +1,13 @@
+{
+  "Makefile": "23b2b89b38f96456dd4e2c461cf87a10ab8e4ae6f7f00ede4a222f1969e60d63",
+  "README.md": "fbae1649af85a2b5f689481c235b56a2e97b17b5aff4b7c3d3009348be678425",
+  "battery-current.sha256": "bc1f3f3222bfd4c2512f45b7d782a6a36fe6db68ff0da6488c57a2659c16596f",
+  "prebuilt/qcom-spmi-iadc.ko": "d328029b6bc34e5891021aab013f68153b98d2b4b433607397d64f63938f6b8a",
+  "prebuilt/superman-iadc-current.ko": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e",
+  "product.mk": "fcfa83bea8499b5bc8f4a01eae86e48d84e204e5090434c9b2e71893ad45f5bf",
+  "qcom-spmi-iadc.c": "a9c114d96aa55aefbfcd9b5ad08fb3d0ae3a6804e8e15398121bdfb51f63c382",
+  "superman-battery-current.rc": "fb1f5508319fc0468d2e13e59aba97033087bdf2ad42b6d866bd20fb791e1d58",
+  "superman-battery-current.sh": "f0a688b8425243be20bdb44adeb10a18ac0cd24ad9e397e2a5684bf32d3456a0",
+  "superman-iadc-current.c": "62c44cc55d558ce6dee37fce395596a5cf27001e5c2258f1b7ebceb366ea8509",
+  "superman-iadc-current.h": "6fdbe94c7552386cf2c05d6d4cd725e8bd5d0fd86abda60d0d2611aa59cd1884"
+}
