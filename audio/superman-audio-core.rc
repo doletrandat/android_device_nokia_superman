@@ -1,0 +1,26 @@
+# AudioService needs its real PCM provider before framework boot completion.
+on post-fs-data
+    start superman-audio-core
+    start superman-audio-playback
+
+service superman-audio-core /system/bin/sh /vendor/bin/superman-audio-core.sh
+    class late_start
+    user root
+    group root audio system
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+service superman-audio-playback /system/bin/sh /vendor/bin/superman-audio-playback.sh
+    class late_start
+    user root
+    group root audio system
+    seclabel u:r:init:s0
+    disabled
+    oneshot
+
+# A bounded failure must still let Android start and report unavailable audio.
+on property:vendor.superman.audio_playback.state=ready
+    start vendor.audio-hal
+on property:vendor.superman.audio_playback.state=failed
+    start vendor.audio-hal

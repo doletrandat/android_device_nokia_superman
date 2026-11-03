@@ -1,0 +1,11 @@
+service vendor.audio-hal /system/bin/sh /vendor/bin/superman-audio-hal.sh
+    override
+    class hal
+    user audioserver
+    seclabel u:r:hal_audio_default:s0
+    group audio camera drmrpc inet media mediadrm net_bt net_bt_admin net_bw_acct wakelock context_hub
+    capabilities BLOCK_SUSPEND
+    ioprio rt 4
+    task_profiles ProcessCapacityHigh HighPerformance
+    onrestart restart audioserver
+    disabled
