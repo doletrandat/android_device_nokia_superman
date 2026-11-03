@@ -10,3 +10,16 @@ Thumbs.db
 __pycache__/
 *.pyc
 *~
+
+# External-module outputs and locally acquired build payloads
+*.ko
+*.o
+*.mod
+*.mod.c
+*.cmd
+Module.symvers
+modules.order
+*.so
+*.so.*
+/graphics/mesa-current/build-tools/
+/graphics/mesa-current/upstream/
