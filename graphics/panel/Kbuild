@@ -1,0 +1,2 @@
+# Standalone experimental module only. Not included in the product kernel.
+obj-m += panel-superman-uefi.o

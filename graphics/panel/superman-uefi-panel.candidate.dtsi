@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// NOT included by the product DTS. The parent deliberately remains disabled.
+// Requires P32 panel-superman-uefi, verified display takeover and contiguous
+// scanout/IOMMU/fence ownership before it can be enabled in a separate candidate.
+&mdss {
+	status = "disabled";
+};
+
+&mdss_dsi0 {
+	panel@0 {
+		compatible = "nokia,superman-uefi-panel";
+		reg = <0>;
+		nokia,uefi-initialized-only;
+		port {
+			superman_panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	remote-endpoint = <&superman_panel_in>;
+	data-lanes = <0 1 2 3>;
+};
