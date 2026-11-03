@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+service vendor.thermal-superman /vendor/bin/hw/android.hardware.thermal@2.0-service.superman
+    interface android.hardware.thermal@1.0::IThermal default
+    interface android.hardware.thermal@2.0::IThermal default
+    class hal
+    user system
+    group system
