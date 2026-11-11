@@ -1,0 +1,11 @@
+# CC52: per-phone provisioning (modem EFS seeds) once /data is mounted; cheap when already done.
+service superman-provision /system/bin/sh /vendor/bin/superman-provision.sh
+    class core
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:su:s0
+
+on post-fs-data
+    start superman-provision
