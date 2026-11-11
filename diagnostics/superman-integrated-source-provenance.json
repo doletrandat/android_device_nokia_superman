@@ -18209,5 +18209,143 @@
       "device/nokia/superman/modem/ril/tests/include/android/log.h": "1e14267ddc6d73d8d95366a13dd466bfb2678d68be6fee42d40d42dcac1dd063"
     },
     "README_sha256": "07ccf9c11874067c7ede35c25a2b33971c7a83b28bf9fab656432a0591f4ce88"
+  },
+  "pf37_BMS_capacity": {
+    "source_root": "device/nokia/superman/power/current",
+    "source_sha256": {
+      "superman-iadc-current.c": "62c44cc55d558ce6dee37fce395596a5cf27001e5c2258f1b7ebceb366ea8509",
+      "superman-bms-profile.h": "f3d959374d823a5b7fcaa2c0b79342620879dbe00467d9e6ef05d250537e06fe",
+      "battery-current.sha256": "5d94ad122e6f7bbf1ab8d06a7e544ae85e1982d026858d2d732d7b1fc0ceee98",
+      "superman-iadc-current.h": "69099e4fbe8578d05188aa3b51842ab67e56ab883c998578857c47a52f2829d4",
+      "superman-battery-current.rc": "6e28c150aad180939c37dafb32cffcc1bedb21ca1f7b0b82e80e0fed03bd88e9",
+      "superman-bms-gauge.c": "24ff8adc9deaec4bfab13c1fa9e42b5886a4b3af8b4200977a8eca4aa1210dc9",
+      "SOURCE-FILES.json": "5ef6af060a22df819ceb906841abd24223baaebed3af86131ae2e9c7a5e41a25",
+      "product.mk": "769d69d2b6e56f85a48a41e3b467e4e453a590e2b086e13b670b8f2a3611bc2e",
+      "Makefile": "1d4595be7fafc8ca9c559e3a812ee18db45e676bef2654cd39494891b44abac2",
+      "superman-bms-math.h": "66bef824e5a5741672c77d26cb4a1c9d5deafd10c923ce0295604b10a87d999c",
+      "qcom-spmi-iadc.c": "858237ed058b2e7ba4389094820e38ccd02646ed688b4a257baa7c1a76cfc8c3",
+      "superman-battery-current.sh": "ce5b5980f66e8cbe1bedddbce804ea3aa85d1753e81b062d24b1d558483f4245",
+      "README.md": "f762403f3b4759e0e7d958f3ea7abda2eac2c70f42546432f897952bc0058b8f",
+      "prebuilt/qcom-spmi-iadc.ko": "9daa5a7aa5c20535e88307a559ef4a67ee067f94244fb0c09b2549422de491ab",
+      "prebuilt/superman-bms-gauge.ko": "10744fc89d0c5aa7178662264d4c8ff1159552d0ff8187d95def0aa1099986d7",
+      "prebuilt/superman-iadc-current.ko": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e"
+    },
+    "build": {
+      "command": [
+        "bwrap",
+        "--ro-bind",
+        "/",
+        "/",
+        "--dev",
+        "/dev",
+        "--proc",
+        "/proc",
+        "--tmpfs",
+        "/tmp",
+        "--bind",
+        "/home/doletrandat/.cache/superman-pf37-capacity-20261103",
+        "/home/doletrandat/.cache/superman-pf37-capacity-20261103",
+        "/run/media/doletrandat/AOSP-BUILD/aosp11/prebuilts/build-tools/linux-x86/bin/make",
+        "-C",
+        "/home/doletrandat/.cache/superman-r37-smp-source-20260924",
+        "O=/home/doletrandat/.cache/superman-pf13-network-20261018/kernel",
+        "M=/home/doletrandat/.cache/superman-pf37-capacity-20261103",
+        "ARCH=arm",
+        "CROSS_COMPILE=arm-linux-gnueabi-",
+        "-j20",
+        "modules"
+      ],
+      "rc": 0,
+      "kernel_files_unchanged": true,
+      "before": {
+        ".config": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
+        "Module.symvers": "0630079417c76739aa1d00aeeb0c6eeae4669aee844ef099f8f90eabf9eaa865",
+        "vmlinux": "c9b5613bd522844c634906318983de27e6956e41cfe95da7516edabf5ed19d2e",
+        "arch/arm/boot/zImage": "c8afc6f0c7cf80c2faeec41a5061947cd1891bd97f52124cf3039c595ccf8bbf"
+      },
+      "after": {
+        ".config": "c9b1530c5bb11cc0349a2d019b4a6f0f1ecef82d07347cb1866f3f9afcfff626",
+        "Module.symvers": "0630079417c76739aa1d00aeeb0c6eeae4669aee844ef099f8f90eabf9eaa865",
+        "vmlinux": "c9b5613bd522844c634906318983de27e6956e41cfe95da7516edabf5ed19d2e",
+        "arch/arm/boot/zImage": "c8afc6f0c7cf80c2faeec41a5061947cd1891bd97f52124cf3039c595ccf8bbf"
+      },
+      "source_hashes": {
+        "superman-bms-profile.h": "f3d959374d823a5b7fcaa2c0b79342620879dbe00467d9e6ef05d250537e06fe",
+        "superman-bms-gauge.c": "24ff8adc9deaec4bfab13c1fa9e42b5886a4b3af8b4200977a8eca4aa1210dc9",
+        "qcom-spmi-iadc.c": "858237ed058b2e7ba4389094820e38ccd02646ed688b4a257baa7c1a76cfc8c3",
+        "superman-iadc-current.h": "69099e4fbe8578d05188aa3b51842ab67e56ab883c998578857c47a52f2829d4",
+        "superman-bms-math.h": "66bef824e5a5741672c77d26cb4a1c9d5deafd10c923ce0295604b10a87d999c"
+      }
+    },
+    "ABI": {
+      "passed": true,
+      "modules": [
+        {
+          "path": "/home/doletrandat/.cache/superman-pf37-capacity-20261103/qcom-spmi-iadc.ko",
+          "sha256": "9daa5a7aa5c20535e88307a559ef4a67ee067f94244fb0c09b2549422de491ab",
+          "imports": 32,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/home/doletrandat/.cache/superman-pf37-capacity-20261103/superman-bms-gauge.ko",
+          "sha256": "10744fc89d0c5aa7178662264d4c8ff1159552d0ff8187d95def0aa1099986d7",
+          "imports": 42,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        },
+        {
+          "path": "/run/media/doletrandat/AOSP-BUILD/aosp11/device/nokia/superman/power/current/prebuilt/superman-iadc-current.ko",
+          "sha256": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e",
+          "imports": 17,
+          "vermagic": "6.16.0-rc4 SMP preempt mod_unload modversions ARMv7 p2v8 "
+        }
+      ],
+      "imports": 91,
+      "actual_linked_kernel_CRCs": true,
+      "old_current_bridge_remains_compatible": true
+    },
+    "function_tests": {
+      "passed": true,
+      "actual_functions": [
+        "math",
+        "latch",
+        "state",
+        "calibration"
+      ],
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "source_sha256": {
+        "superman-bms-profile.h": "f3d959374d823a5b7fcaa2c0b79342620879dbe00467d9e6ef05d250537e06fe",
+        "superman-bms-gauge.c": "24ff8adc9deaec4bfab13c1fa9e42b5886a4b3af8b4200977a8eca4aa1210dc9",
+        "qcom-spmi-iadc.c": "858237ed058b2e7ba4389094820e38ccd02646ed688b4a257baa7c1a76cfc8c3",
+        "superman-iadc-current.h": "69099e4fbe8578d05188aa3b51842ab67e56ab883c998578857c47a52f2829d4",
+        "superman-bms-math.h": "66bef824e5a5741672c77d26cb4a1c9d5deafd10c923ce0295604b10a87d999c"
+      }
+    },
+    "runtime_before_comment_only_rebuild": {
+      "passed": true,
+      "boot_id": "6beaf763-6c75-4dc1-aaa7-a813b4c55580",
+      "module_sha256": {
+        "qcom-spmi-iadc.ko": "9daa5a7aa5c20535e88307a559ef4a67ee067f94244fb0c09b2549422de491ab",
+        "superman-bms-gauge.ko": "ade31cbb93d14d3ef5639f9bbd3dbc88daae3411a2d9070e853944dc176647ff",
+        "superman-iadc-current.ko": "84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e"
+      },
+      "normal_Health_BatteryService_BatteryManager_capacity_verified": true,
+      "steady_samples": 18,
+      "steady_interval_s": 10,
+      "candidate_active": true,
+      "persistent_install": false,
+      "charging_policy_unchanged": true
+    },
+    "loader_tests": {
+      "passed": true,
+      "executions": 29,
+      "source_sha256": "ce5b5980f66e8cbe1bedddbce804ea3aa85d1753e81b062d24b1d558483f4245"
+    },
+    "profile": "stock BV-T5A 2220mAh nominal FCC; learned ageing capacity not qualified",
+    "normal_Android_capacity": "warm verified; packaged loader and automatic cold boot pending",
+    "charger_limits_thermal_and_GPU_unchanged": true,
+    "rollback": "/vendor/etc/superman/pf37-capacity-rollback/rollback.sh"
   }
 }

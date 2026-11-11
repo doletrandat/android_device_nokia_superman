@@ -48,4 +48,4 @@ GPU rendering path or justify changing Android's global renderer/debug policy.
 
 Implementation/host oracle validation, ABI binding, six P69 hardware runs and
 subsequent crash evidence are retained in
-`/home/doletrandat/Desktop/p69-offscreen-render-test-20261012/REPORT.md`.
+`/home/doletrandat/Superman/history/desktop/p69-offscreen-render-test-20261012/REPORT.md`.

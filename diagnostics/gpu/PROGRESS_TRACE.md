@@ -34,6 +34,6 @@ the captured command stream.
 
 Source, baseline/candidate ARM32 builds, bounds/lifetime/product-gate tests,
 decoder and private-phone validation are retained in
-`/home/doletrandat/Desktop/p73-gpu-submission-audit-20261015`.
+`/home/doletrandat/Superman/history/desktop/p73-gpu-submission-audit-20261015`.
 P74 packaging is retained in
-`/home/doletrandat/Desktop/p74-gpu-progress-20261015`.
+`/home/doletrandat/Superman/history/desktop/p74-gpu-progress-20261015`.

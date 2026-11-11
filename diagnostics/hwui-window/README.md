@@ -6,7 +6,7 @@ accelerated window and eight independently recorded child Views. Text, opaque
 patches, rounded path clipping and saveLayerAlpha are drawn with Canvas.
 
 The private artifact build and guarded runner are retained at
-`/home/doletrandat/Desktop/p69-hwui-window-test-20261013`.
+`/home/doletrandat/Superman/history/desktop/p69-hwui-window-test-20261013`.
 The package is `org.superman.diagnostics.hwui`, activity `.WindowTest`.
 Starting requires a new 16-character lowercase hexadecimal `token` extra;
 an existing token directory is rejected without overwriting it. No permissions,
@@ -68,7 +68,7 @@ at the final identity stage; zero checks on transformed stages are not passes.
 Captures are never synchronized evidence of the physical panel.
 
 2026-10-13 extension outcome is in
-`/home/doletrandat/Desktop/p69-hwui-transform-test-20261013/REPORT.md`.
+`/home/doletrandat/Superman/history/desktop/p69-hwui-transform-test-20261013/REPORT.md`.
 Both runs completed; the user reported missing content and flashing/tearing without
 pixel readbacks, then symptoms only during motion in the capture run. Captured
 app-window output contains missing rows and malformed colored geometry. Final
@@ -90,4 +90,4 @@ identities and account for crop/format/transform. Mapping can perturb timing and
 cache state. The JNI build and host layout tests pass, but the first device run
 rebooted near startup without a retained direct capture. Runtime correctness is
 unvalidated; do not rerun while investigating repeated reboots/full boot storage.
-See `/home/doletrandat/Desktop/p69-hwui-direct-buffer-test-20261013/REPORT.md`.
+See `/home/doletrandat/Superman/history/desktop/p69-hwui-direct-buffer-test-20261013/REPORT.md`.

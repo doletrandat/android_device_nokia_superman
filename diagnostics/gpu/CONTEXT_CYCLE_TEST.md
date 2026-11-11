@@ -55,4 +55,4 @@ stencil/AA/sRGB, native producer fences, Android composition/scanout, or sustain
 60fps/stability. A PASS cannot establish the cause of systemwide UI glitches.
 
 Exact sources, binary, local checks and P69 hardware records are retained at
-`/home/doletrandat/Desktop/p69-multiprocess-idle-test-20261013`.
+`/home/doletrandat/Superman/history/desktop/p69-multiprocess-idle-test-20261013`.
