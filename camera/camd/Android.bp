@@ -1,0 +1,10 @@
+// Lumia 730 rear camera bridge daemon: CAMSS RAW10 -> GPU (or CPU) ISP -> superman-camfeed.
+cc_binary {
+    name: "superman-camd",
+    vendor: true,
+    srcs: ["superman_camd.c", "camd_gpu.c"],
+    include_dirs: ["device/nokia/superman/camera/camfeed"],
+    shared_libs: ["libEGL", "libGLESv2", "liblog"],
+    cflags: ["-Wall", "-Werror", "-O3", "-DCAMD_GPU", "-Wno-unused-parameter"],
+    compile_multilib: "32",
+}
