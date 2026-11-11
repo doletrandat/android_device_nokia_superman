@@ -8,3 +8,6 @@ Android image.
 The tree is intended for `device/nokia/superman` in an Android 11 source
 checkout. Generated images, Microsoft firmware, partition dumps, and device
 backups are intentionally excluded.
+
+Developers: start with [DEVELOPING.md](DEVELOPING.md) (boot chain, where the source is, how the image is
+produced, the hash checks, known gaps).
