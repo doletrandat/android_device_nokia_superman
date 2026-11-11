@@ -1,0 +1,6 @@
+# Enable SPM standalone power collapse after boot; the kernel registers it disabled.
+on property:sys.boot_completed=1
+    write /sys/devices/system/cpu/cpu0/cpuidle/state1/disable 0
+    write /sys/devices/system/cpu/cpu1/cpuidle/state1/disable 0
+    write /sys/devices/system/cpu/cpu2/cpuidle/state1/disable 0
+    write /sys/devices/system/cpu/cpu3/cpuidle/state1/disable 0

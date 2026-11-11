@@ -1,0 +1,13 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/cpuidle/cpuidle-qcom-spm.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc4-cpuidle-20261103/kernel-source/cpuidle-qcom-spm.c	2026-11-03 22:48:33.794334317 +0700
+@@ -121,6 +121,10 @@
+ 	if (ret <= 0)
+ 		return ret ? : -ENODEV;
+ 
++	/* Power collapse stays opt-in through sysfs until validated on hardware. */
++	if (of_machine_is_compatible("nokia,superman"))
++		data->cpuidle_driver.states[1].flags |= CPUIDLE_FLAG_OFF;
++
+ 	return cpuidle_register(&data->cpuidle_driver, NULL);
+ }
+ 
