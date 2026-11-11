@@ -39,16 +39,63 @@
 #include <system/graphics.h>
 
 #include <gbm.h>
+#include <xf86drm.h>
 
 #include "gralloc_gbm_priv.h"
 #include <android/gralloc_handle.h>
 
 #include <unordered_map>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <linux/dma-buf.h>
 #include "../../p69/gralloc-metadata.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
+
+/*
+ * HAL_PIXEL_FORMAT_BLOB (Codec2 C2AllocatorBlob linear blocks, width = bytes,
+ * height = 1) is stored as a linear R8 GBM buffer of rows of at most
+ * kBlobPitch bytes. The row pitch must equal the row width so the bytes are
+ * contiguous; allocation fails otherwise.
+ */
+static const uint32_t kBlobPitch = 4096;
+static const uint32_t kBlobMaxBytes = kBlobPitch * 4096;
+
+static bool blob_shape(uint32_t bytes, uint32_t *w, uint32_t *h)
+{
+	if (!bytes || bytes > kBlobMaxBytes)
+		return false;
+	*w = bytes > kBlobPitch ? kBlobPitch : ((bytes + 63) & ~63u);
+	*h = (bytes + *w - 1) / *w;
+	return true;
+}
+
+/*
+ * HAL_PIXEL_FORMAT_YCBCR_420_888 is allocated as NV12 in the Qualcomm Venus
+ * layout so the hardware codec can decode into / encode from it directly
+ * (V4L2 DMABUF): Y pitch ALIGN(w, 128), ALIGN(h, 32) Y rows, interleaved CbCr
+ * plane right after them with ALIGN(h / 2, 16) rows, and the codec's 4 KiB +
+ * 8 KiB tail, rounded to 4 KiB (venus get_framesize_raw_nv12()). Stored as a
+ * linear R8 buffer of `pitch` columns.
+ */
+struct nv12_layout {
+	uint32_t pitch, uv_offset, size, rows;
+};
+
+static bool nv12_layout(uint32_t w, uint32_t h, struct nv12_layout *l)
+{
+	if (!w || !h || w > 4096 || h > 4096)
+		return false;
+	l->pitch = (w + 127) & ~127u;
+	l->uv_offset = l->pitch * ((h + 31) & ~31u);
+	const uint32_t uv = l->pitch * (((h + 1) / 2 + 15) & ~15u) + 4096;
+	l->size = (l->uv_offset + uv + 8192 + 4095) & ~4095u;
+	l->rows = (l->size + l->pitch - 1) / l->pitch;
+	return true;
+}
 
 static std::unordered_map<buffer_handle_t, struct gbm_bo *> gbm_bo_handle_map;
 
@@ -92,6 +139,10 @@ static uint32_t get_gbm_format(int format)
 	case HAL_PIXEL_FORMAT_BGRA_8888:
 		fmt = GBM_FORMAT_ARGB8888;
 		break;
+	case HAL_PIXEL_FORMAT_BLOB:
+	case HAL_PIXEL_FORMAT_YCBCR_420_888:
+		fmt = GBM_FORMAT_R8;
+		break;
 	case HAL_PIXEL_FORMAT_YV12:
 		/* YV12 is planar, but must be a single buffer so ask for GR88 */
 		fmt = GBM_FORMAT_GR88;
@@ -123,6 +174,8 @@ static int gralloc_gbm_get_bpp(int format)
 	case HAL_PIXEL_FORMAT_YCbCr_422_I:
 		bpp = 2;
 		break;
+	case HAL_PIXEL_FORMAT_BLOB:
+	case HAL_PIXEL_FORMAT_YCBCR_420_888:
 	/* planar; only Y is considered */
 	case HAL_PIXEL_FORMAT_YV12:
 	case HAL_PIXEL_FORMAT_YCbCr_422_SP:
@@ -181,6 +234,15 @@ static struct gbm_bo *gbm_import(struct gbm_device *gbm,
 	if (handle->format == HAL_PIXEL_FORMAT_YV12) {
 		data.width /= 2;
 		data.height += handle->height / 2;
+	} else if (handle->format == HAL_PIXEL_FORMAT_BLOB &&
+		   !blob_shape(handle->width, &data.width, &data.height)) {
+		return NULL;
+	} else if (handle->format == HAL_PIXEL_FORMAT_YCBCR_420_888) {
+		struct nv12_layout l;
+		if (!nv12_layout(handle->width, handle->height, &l))
+			return NULL;
+		data.width = l.pitch;
+		data.height = l.rows;
 	}
 
 	#ifdef GBM_BO_IMPORT_FD_MODIFIER
@@ -234,6 +296,24 @@ static struct gbm_bo *gbm_alloc(struct gbm_device *gbm,
         width = ((width + 31) & ~31) / 2;
         height += handle->height / 2;
         usage |= GBM_BO_USE_LINEAR;
+    } else if (handle->format == HAL_PIXEL_FORMAT_BLOB) {
+        uint32_t bw, bh;
+        if (handle->height != 1 || !blob_shape(handle->width, &bw, &bh)) {
+            errno = EINVAL;
+            return NULL;
+        }
+        width = bw;
+        height = bh;
+        usage |= GBM_BO_USE_LINEAR;
+    } else if (handle->format == HAL_PIXEL_FORMAT_YCBCR_420_888) {
+        struct nv12_layout l;
+        if (!nv12_layout(handle->width, handle->height, &l)) {
+            errno = EINVAL;
+            return NULL;
+        }
+        width = l.pitch;
+        height = l.rows;
+        usage |= GBM_BO_USE_LINEAR;
     }
 
 	ALOGV("create BO, size=%dx%d, fmt=%d, usage=%x",
@@ -260,7 +340,25 @@ static struct gbm_bo *gbm_alloc(struct gbm_device *gbm,
         errno = EINVAL;
         return nullptr;
     }
-    handle->prime_fd = gbm_bo_get_fd(bo);
+    if ((handle->format == HAL_PIXEL_FORMAT_BLOB ||
+         handle->format == HAL_PIXEL_FORMAT_YCBCR_420_888) &&
+        (gbm_bo_get_stride(bo) != uint32_t(width) || gbm_bo_get_modifier(bo) != 0)) {
+        // Rows would not be contiguous bytes.
+        gbm_bo_destroy(bo);
+        errno = EINVAL;
+        return nullptr;
+    }
+    if (gbm_bo_get_modifier(bo) == 0) {
+        // Linear buffers are CPU-mapped by importers straight from the DMA-BUF
+        // (writable MAP_SHARED), so export it read-write; gbm_bo_get_fd() does not.
+        int fd = -1;
+        if (drmPrimeHandleToFD(gbm_device_get_fd(gbm), gbm_bo_get_handle(bo).u32,
+                               DRM_CLOEXEC | DRM_RDWR, &fd))
+            fd = -1;
+        handle->prime_fd = fd;
+    } else {
+        handle->prime_fd = gbm_bo_get_fd(bo);
+    }
 	if (handle->prime_fd < 0) { gbm_bo_destroy(bo); return nullptr; }
     handle->stride = gbm_bo_get_stride(bo);
 	#ifdef GBM_BO_IMPORT_FD_MODIFIER
@@ -278,6 +376,18 @@ static bool valid_handle(buffer_handle_t handle)
         handle->numInts != GRALLOC_HANDLE_NUM_INTS) return false;
     const auto *h = gralloc_handle(handle);
     const int bpp = gralloc_gbm_get_bpp(h->format);
+    if (h->format == HAL_PIXEL_FORMAT_BLOB) {
+        uint32_t bw, bh;
+        return h->magic == GRALLOC_HANDLE_MAGIC && h->version == GRALLOC_HANDLE_VERSION &&
+            h->prime_fd >= 0 && fcntl(h->prime_fd, F_GETFD) >= 0 && h->height == 1 &&
+            blob_shape(h->width, &bw, &bh) && h->stride == bw;
+    }
+    if (h->format == HAL_PIXEL_FORMAT_YCBCR_420_888) {
+        struct nv12_layout l;
+        return h->magic == GRALLOC_HANDLE_MAGIC && h->version == GRALLOC_HANDLE_VERSION &&
+            h->prime_fd >= 0 && fcntl(h->prime_fd, F_GETFD) >= 0 &&
+            nv12_layout(h->width, h->height, &l) && h->stride == l.pitch;
+    }
     return h->magic == GRALLOC_HANDLE_MAGIC && h->version == GRALLOC_HANDLE_VERSION &&
         h->prime_fd >= 0 && fcntl(h->prime_fd, F_GETFD) >= 0 &&
         h->width > 0 && h->height > 0 && h->width <= 16384 && h->height <= 16384 &&
@@ -286,8 +396,134 @@ static bool valid_handle(buffer_handle_t handle)
         (h->format != HAL_PIXEL_FORMAT_YV12 || !(h->width % 2 || h->height % 2));
 }
 
+/*
+ * Imported LINEAR buffers are CPU-mapped straight from their DMA-BUF, with
+ * DMA_BUF_IOCTL_SYNC waiting on the implicit GPU fences like gbm_bo_map().
+ * Importing processes (codecs, input surfaces, apps) then never bring up the
+ * GPU driver (Mesa) just to register or map a buffer: that needs DRM access
+ * and syscalls the media seccomp sandboxes block. Non-linear layouts keep the
+ * GBM import path.
+ */
+struct direct_buf {
+	size_t size;		/* DMA-BUF size */
+	void *addr;		/* CPU mapping while locked for SW access */
+	int lock_count;
+	int locked_for;
+};
+static std::unordered_map<buffer_handle_t, direct_buf> direct_map;
+
+static uint64_t linear_bytes(const struct gralloc_handle_t *h)
+{
+	if (h->format == HAL_PIXEL_FORMAT_BLOB) {
+		uint32_t bw, bh;
+		return blob_shape(h->width, &bw, &bh) ? uint64_t(bw) * bh : 0;
+	}
+	if (h->format == HAL_PIXEL_FORMAT_YV12) {
+		const uint64_t ysize = uint64_t(h->stride) * h->height;
+		const uint64_t cstride = ((uint64_t(h->stride) / 2 + 15) & ~UINT64_C(15));
+		return ysize + 2 * cstride * (h->height / 2);
+	}
+	if (h->format == HAL_PIXEL_FORMAT_YCBCR_420_888) {
+		struct nv12_layout l;
+		return nv12_layout(h->width, h->height, &l) ? l.size : 0;
+	}
+	/* Single-plane formats */
+	return gralloc_gbm_get_bpp(h->format) > 0 ? uint64_t(h->stride) * h->height : 0;
+}
+
+bool gralloc_gbm_handle_is_direct(buffer_handle_t handle)
+{
+	if (!valid_handle(handle))
+		return false;
+	const auto *h = gralloc_handle(handle);
+	/* DRM_FORMAT_MOD_LINEAR only: Mesa reports tiled layouts otherwise. */
+	return h->modifier == 0 && linear_bytes(h) &&
+	       (h->format != HAL_PIXEL_FORMAT_YV12 || h->stride % 32 == 0);
+}
+
+int gralloc_gbm_handle_register_direct(buffer_handle_t handle)
+{
+	if (!gralloc_gbm_handle_is_direct(handle) || direct_map.count(handle) ||
+	    gbm_bo_handle_map.count(handle))
+		return -EINVAL;
+	const auto *h = gralloc_handle(handle);
+	const off_t size = lseek(h->prime_fd, 0, SEEK_END);
+	const uint64_t need = linear_bytes(h);
+	if (size <= 0 || !need || need > uint64_t(size))
+		return -EINVAL;
+	direct_map.emplace(handle, direct_buf{size_t(size), nullptr, 0, 0});
+	return 0;
+}
+
+static int direct_sync(int fd, uint64_t flags)
+{
+	struct dma_buf_sync sync = { flags };
+	int ret;
+	do {
+		ret = ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync);
+	} while (ret && (errno == EINTR || errno == EAGAIN));
+	return ret ? -errno : 0;
+}
+
+static uint64_t direct_sync_flags(int usage)
+{
+	uint64_t f = 0;
+	if (usage & GRALLOC_USAGE_SW_READ_MASK)
+		f |= DMA_BUF_SYNC_READ;
+	if (usage & GRALLOC_USAGE_SW_WRITE_MASK)
+		f |= DMA_BUF_SYNC_WRITE;
+	return f;
+}
+
+static int direct_lock(buffer_handle_t handle, direct_buf &d, int usage, void **addr)
+{
+	const auto *h = gralloc_handle(handle);
+	if (d.lock_count)
+		return -EBUSY;
+	const int sw = usage & (GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK);
+	if (sw) {
+		const int prot = PROT_READ |
+			((usage & GRALLOC_USAGE_SW_WRITE_MASK) ? PROT_WRITE : 0);
+		void *p = mmap(nullptr, d.size, prot, MAP_SHARED, h->prime_fd, 0);
+		if (p == MAP_FAILED)
+			return -errno;
+		int err = direct_sync(h->prime_fd, DMA_BUF_SYNC_START | direct_sync_flags(usage));
+		if (err) {
+			munmap(p, d.size);
+			return err;
+		}
+		d.addr = p;
+	}
+	*addr = d.addr;
+	d.lock_count = 1;
+	d.locked_for = usage;
+	return 0;
+}
+
+static int direct_unlock(buffer_handle_t handle, direct_buf &d)
+{
+	if (!d.lock_count)
+		return -EINVAL;
+	int err = 0;
+	if (d.addr) {
+		err = direct_sync(gralloc_handle(handle)->prime_fd,
+				  DMA_BUF_SYNC_END | direct_sync_flags(d.locked_for));
+		munmap(d.addr, d.size);
+		d.addr = nullptr;
+	}
+	d.lock_count = 0;
+	d.locked_for = 0;
+	return err;
+}
+
 int gbm_free(buffer_handle_t handle)
 {
+    auto direct = direct_map.find(handle);
+    if (direct != direct_map.end()) {
+        if (direct->second.lock_count) return -EBUSY;
+        direct_map.erase(direct);
+        return 0;
+    }
     auto found = gbm_bo_handle_map.find(handle);
     if (found == gbm_bo_handle_map.end()) return -EINVAL;
     const auto *data = gbm_bo_data(found->second);
@@ -324,6 +560,21 @@ static int gbm_map(buffer_handle_t handle, int x, int y, int w, int h,
         x = y = 0;
         w = gbm_handle->width / 2;
         h = gbm_handle->height + gbm_handle->height / 2;
+    } else if (gbm_handle->format == HAL_PIXEL_FORMAT_BLOB) {
+        // Map every row from the origin: callers address the bytes linearly.
+        uint32_t bw, bh;
+        if (!blob_shape(gbm_handle->width, &bw, &bh))
+            return -EINVAL;
+        x = y = 0;
+        w = bw;
+        h = bh;
+    } else if (gbm_handle->format == HAL_PIXEL_FORMAT_YCBCR_420_888) {
+        struct nv12_layout l;
+        if (!nv12_layout(gbm_handle->width, gbm_handle->height, &l))
+            return -EINVAL;
+        x = y = 0;
+        w = l.pitch;
+        h = l.rows;
     }
 
 	if (enable_write)
@@ -427,7 +678,18 @@ buffer_handle_t gralloc_gbm_bo_create(struct gbm_device *gbm,
 	struct gbm_bo *bo;
 	native_handle_t *handle;
 
-	if (!stride || width <= 0 || height <= 0 || width > 16384 || height > 16384 ||
+	/*
+	 * Camera/video producers (the external camera HAL's preview and video streams) ask for
+	 * IMPLEMENTATION_DEFINED: give them the Venus NV12 layout, which lock_ycbcr and Mesa's EGL
+	 * YUV importer (IMPLEMENTATION_DEFINED -> lock_ycbcr) already handle. Other uses of
+	 * IMPLEMENTATION_DEFINED stay unsupported, as before.
+	 */
+	if (format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED &&
+	    (usage & (GRALLOC_USAGE_HW_CAMERA_WRITE | GRALLOC_USAGE_HW_VIDEO_ENCODER)))
+		format = HAL_PIXEL_FORMAT_YCBCR_420_888;
+	const bool blob = format == HAL_PIXEL_FORMAT_BLOB;
+	if (!stride || width <= 0 || height <= 0 ||
+        (blob ? (height != 1 || uint32_t(width) > kBlobMaxBytes) : (width > 16384 || height > 16384)) ||
         !get_gbm_format(format) || (format == HAL_PIXEL_FORMAT_YV12 && (width % 2 || height % 2)) ||
         (usage & GRALLOC_USAGE_PROTECTED)) { errno = EINVAL; return nullptr; }
     handle = gralloc_handle_create(width, height, format, usage);
@@ -482,6 +744,11 @@ int gralloc_gbm_bo_lock(buffer_handle_t handle,
     if (x < 0 || y < 0 || w <= 0 || h <= 0 ||
         uint64_t(x) + w > gralloc_handle(handle)->width ||
         uint64_t(y) + h > gralloc_handle(handle)->height) return reject("region", -EINVAL);
+    auto direct = direct_map.find(handle);
+    if (direct != direct_map.end()) {
+        int err = direct_lock(handle, direct->second, usage, addr);
+        return err ? reject("direct", err) : 0;
+    }
     struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
     struct gbm_bo *bo = gralloc_gbm_bo_from_handle(handle);
     struct bo_data_t *bo_data;
@@ -544,22 +811,28 @@ int gralloc_gbm_bo_lock_ycbcr(buffer_handle_t handle, int usage,
     memset(layout, 0, sizeof(*layout));
     if (!valid_handle(handle)) return -EINVAL;
     const auto *gh = gralloc_handle(handle);
-    if (gh->format != HAL_PIXEL_FORMAT_YV12 || gh->modifier != 0 || gh->stride % 32)
+    const bool nv12 = gh->format == HAL_PIXEL_FORMAT_YCBCR_420_888;
+    if ((gh->format != HAL_PIXEL_FORMAT_YV12 && !nv12) || gh->modifier != 0 ||
+        (!nv12 && gh->stride % 32))
         return -EINVAL;
     const int read = usage & GRALLOC_USAGE_SW_READ_MASK;
     const int write = usage & GRALLOC_USAGE_SW_WRITE_MASK;
-    if ((usage & ~(GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK)) ||
-        (read && read != GRALLOC_USAGE_SW_READ_RARELY && read != GRALLOC_USAGE_SW_READ_OFTEN) ||
+    // Only the CPU access bits matter here; callers such as the camera HAL pass the
+    // buffer's full usage (camera, texture, ...), which a CPU mapping does not depend on.
+    if ((read && read != GRALLOC_USAGE_SW_READ_RARELY && read != GRALLOC_USAGE_SW_READ_OFTEN) ||
         (write && write != GRALLOC_USAGE_SW_WRITE_RARELY && write != GRALLOC_USAGE_SW_WRITE_OFTEN))
         return -EINVAL;
     if (!x && !y && !w && !h) { w = gh->width; h = gh->height; }
     if (x < 0 || y < 0 || w <= 0 || h <= 0 ||
         uint64_t(x) + w > gh->width || uint64_t(y) + h > gh->height)
         return -EINVAL;
-    const uint64_t ysize = uint64_t(gh->stride) * gh->height;
-    const uint64_t cstride = ((uint64_t(gh->stride) / 2 + 15) & ~UINT64_C(15));
+    struct nv12_layout nl = {};
+    if (nv12 && !nv12_layout(gh->width, gh->height, &nl))
+        return -EINVAL;
+    const uint64_t ysize = nv12 ? nl.uv_offset : uint64_t(gh->stride) * gh->height;
+    const uint64_t cstride = nv12 ? nl.pitch : ((uint64_t(gh->stride) / 2 + 15) & ~UINT64_C(15));
     const uint64_t csize = cstride * (gh->height / 2);
-    const uint64_t size = ysize + csize * 2;
+    const uint64_t size = nv12 ? nl.size : ysize + csize * 2;
     struct stat backing = {};
     if (size > SIZE_MAX || fstat(gh->prime_fd, &backing) || backing.st_size < 0 ||
         size > uint64_t(backing.st_size)) return -EINVAL;
@@ -574,10 +847,17 @@ int gralloc_gbm_bo_lock_ycbcr(buffer_handle_t handle, int usage,
         return -EINVAL;
     }
     layout->y = addr;
-    layout->cr = reinterpret_cast<void *>(base + ysize);
-    layout->cb = reinterpret_cast<void *>(base + ysize + csize);
     layout->ystride = gh->stride;
     layout->cstride = cstride;
+    if (nv12) {
+        // Interleaved CbCr after the aligned luma rows.
+        layout->cb = reinterpret_cast<void *>(base + ysize);
+        layout->cr = reinterpret_cast<void *>(base + ysize + 1);
+        layout->chroma_step = 2;
+        return 0;
+    }
+    layout->cr = reinterpret_cast<void *>(base + ysize);
+    layout->cb = reinterpret_cast<void *>(base + ysize + csize);
     layout->chroma_step = 1;
     return 0;
 }
@@ -587,6 +867,9 @@ int gralloc_gbm_bo_lock_ycbcr(buffer_handle_t handle, int usage,
  */
 int gralloc_gbm_bo_unlock(buffer_handle_t handle)
 {
+	auto direct = direct_map.find(handle);
+	if (direct != direct_map.end())
+		return direct_unlock(handle, direct->second);
 	struct gbm_bo *bo = gralloc_gbm_bo_from_handle(handle);
 	struct bo_data_t *bo_data;
 	if (!bo)

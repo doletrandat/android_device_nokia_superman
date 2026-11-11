@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # SPDX-License-Identifier: Apache-2.0
-# Unselected P35 headless boot profile. Never invoke in the running P30 session.
+# P35 headless boot profile; CC10 adds the native msm KMS phase (contract phase kms).
 PATH=/system/bin:/vendor/bin
 export PATH
 LOG=/dev/superman-native-startup.log
@@ -36,7 +36,12 @@ run_profile() {
     read -r boot_sha phase extra < "$CONTRACT"
     [ -z "$extra" ] && [ "${#boot_sha}" = 64 ] || { fail contract; return 1; }
     case "$boot_sha" in *[!0-9a-f]*) fail contract; return 1;; esac
-    case "$phase" in probe|flip|gpu|hwc) ;; *) fail phase; return 1;; esac
+    case "$phase" in probe|flip|gpu|hwc|kms) ;; *) fail phase; return 1;; esac
+    # CC10: the kms phase keeps the CC4b command line (LK repeats its cached
+    # copy first, so a changed stage token always conflicts). The sealed
+    # contract alone selects native msm KMS instead of the firmware-KMS lab.
+    stage=$phase
+    [ "$phase" = kms ] && stage=hwc
     # The P36 phone capture repeats the complete command line. Repeated exact
     # values are equivalent; any conflicting or malformed native value fails.
     flag=0; phase_flag=0
@@ -46,13 +51,13 @@ run_profile() {
                 [ "$token" = androidboot.superman_native=p34 ] || { fail native_flag_mismatch; return 1; }
                 flag=$((flag+1));;
             androidboot.superman_native_stage|androidboot.superman_native_stage=*)
-                [ "$token" = "androidboot.superman_native_stage=$phase" ] || { fail phase_mismatch; return 1; }
+                [ "$token" = "androidboot.superman_native_stage=$stage" ] || { fail phase_mismatch; return 1; }
                 phase_flag=$((phase_flag+1));;
         esac
     done
     [ "$flag" -ge 1 ] && [ "$phase_flag" -ge 1 ] || { fail boot_flags; return 1; }
     log "boot_flags candidate_count=$flag stage_count=$phase_flag exact_values=1"
-    [ "$(getprop ro.superman.native_stage)" = "$phase" ] || { fail stage_property; return 1; }
+    [ "$(getprop ro.superman.native_stage)" = "$stage" ] || { fail stage_property; return 1; }
     [ "$(od -An -tx1 /proc/device-tree/compatible | tr -d ' \n')" = 6e6f6b69612c73757065726d616e0071636f6d2c6d736d3832323600 ] || { fail board; return 1; }
     empty_consumers || { fail consumers; return 1; }
     # Immutable stack choices must still be unset. Partial selection cannot retry.
@@ -60,7 +65,7 @@ run_profile() {
         [ -z "$(getprop "$p")" ] || { fail properties_already_set; return 1; }
     done
     [ "$(sha256sum /lumia_sd/boot.img | cut -d ' ' -f 1)" = "$boot_sha" ] || { fail boot_hash; return 1; }
-    [ "$(zcat /proc/config.gz | sha256sum | cut -d ' ' -f 1)" = c58a41e6079dcc8bfa18657f2765a49b1a6819727c40a78debe9ce49e5250970 ] || { fail config_hash; return 1; }
+    [ "$(zcat /proc/config.gz | sha256sum | cut -d ' ' -f 1)" = 76cf12182ed0bea29aa7eb0916766b0b4f5715e9fb41dfed53c962d86142af73 ] || { fail config_hash; return 1; }
     sha256sum -c "$MANIFEST" >> "$LOG" 2>&1 || { fail component_hashes; return 1; }
     grep -Eq '^(msm|superman_fw_kms|superman_acquire_gate) ' /proc/modules && { fail preloaded_owner; return 1; }
     grep -Eq '^(drm_client_lib|drm_exec|gpu_sched) ' /proc/modules && { fail preloaded_dependency; return 1; }
@@ -71,6 +76,7 @@ run_profile() {
         log "module=$file"
         insmod "/vendor/lib/modules/native-p34/$file.ko" || { fail dependency_load; return 1; }
     done
+    if [ "$phase" = kms ]; then kms_profile; return $?; fi
     log "module=msm render_only=1 vram=16m"
     insmod /vendor/lib/modules/native-p34/msm.ko render_only=1 superman_diag=1 vram=16m || { fail msm_load; return 1; }
     [ "$(cat /sys/module/msm/parameters/render_only)" = Y ] && healthy || { fail msm_state; return 1; }
@@ -155,6 +161,57 @@ run_profile() {
     setprop vendor.superman.native_result "$phase-pass" || return 1
     log "PASS phase=$phase device=$devices headless_hold=1 SF_UI_validation=false"
 }
+# CC10 native display: mainline msm owns MDP5/DSI (Burton panel, PHY/PLL quirk)
+# and drm_hwcomposer scans out GPU-composed client targets from VRAM. No
+# firmware-KMS handoff and no CPU frame copy.
+kms_profile() {
+    log "module=msm render_only=0 vram=32m kms=1"
+    insmod /vendor/lib/modules/native-kms/msm.ko render_only=0 superman_diag=1 vram=32m || { fail kms_msm_load; return 1; }
+    [ "$(cat /sys/module/msm/parameters/render_only)" = N ] && healthy || { fail kms_msm_state; return 1; }
+    log "module=panel-nokia-burton"
+    insmod /vendor/lib/modules/native-kms/panel-nokia-burton.ko || { fail kms_panel_load; return 1; }
+    n=0
+    while [ "$(cat /sys/class/drm/card0-DSI-1/status 2>/dev/null)" != connected ] && [ "$n" -lt 15 ]; do sleep 1; n=$((n+1)); done
+    [ -c /dev/dri/card0 ] && [ -c /dev/dri/renderD128 ] &&
+    [ "$(cat /sys/class/drm/card0-DSI-1/status 2>/dev/null)" = connected ] || { fail kms_connector; return 1; }
+    log "kms_connector connected waited_seconds=$n"
+    healthy && empty_consumers || { fail kms_state; return 1; }
+    setprop hwc.drm.device /dev/dri/card0 || { fail kms_drm_property; return 1; }
+    for pair in ro.hardware.gralloc=superman_native ro.hardware.hwcomposer=drm ro.hardware.egl=mesa ro.superman.native_scanout=true ro.superman.gpu_display=true ro.surface_flinger.default_composition_pixel_format=5 hwc.drm.exclude_non_hwfb_imports=1 hwc.drm.use_overlay_planes=0; do
+        key=${pair%%=*}; value=${pair#*=}
+        setprop "$key" "$value" && [ "$(getprop "$key")" = "$value" ] || { fail kms_selection; return 1; }
+    done
+    setprop vendor.superman.native_result kms-pass || return 1
+    log "PASS phase=kms device=/dev/dri/card0 hwcomposer=drm cpu_copy=0"
+}
+# CC10: start graphics HALs and SF on the native KMS stack, then release apps.
+kms_ui() {
+    LOG=/dev/superman-native-kms-ui.log
+    : > "$LOG"
+    [ "$(getprop vendor.superman.native_result)" = kms-pass ] &&
+    [ "$(getprop ro.hardware.hwcomposer)" = drm ] &&
+    [ -z "$(getprop vendor.superman.native_kms_release)" ] || { fail kms_ui_gate; return 1; }
+    read -r boot_sha phase extra < "$CONTRACT"
+    [ -z "$extra" ] && [ "$phase" = kms ] &&
+    [ "$(sha256sum /lumia_sd/boot.img | cut -d ' ' -f 1)" = "$boot_sha" ] || { fail kms_ui_boot; return 1; }
+    start vendor.gralloc-2-0 && start vendor.hwcomposer-2-1 || { fail kms_hal_start; return 1; }
+    n=0
+    while [ "$n" -lt 15 ]; do
+        lshal -i --neat --types=binderized > /dev/superman-native-hal-list.txt 2>> "$LOG"
+        if grep -qx 'android.hardware.graphics.allocator@2.0::IAllocator/default' /dev/superman-native-hal-list.txt &&
+           grep -qx 'android.hardware.graphics.composer@2.1::IComposer/default' /dev/superman-native-hal-list.txt; then break; fi
+        sleep 1; n=$((n+1))
+    done
+    [ "$n" -lt 15 ] || { fail kms_hal_registration; return 1; }
+    log "HAL_registered polls=$n"
+    start surfaceflinger || { fail kms_sf_start; return 1; }
+    n=0
+    while [ "$(getprop init.svc.surfaceflinger)" != running ] && [ "$n" -lt 10 ]; do sleep 1; n=$((n+1)); done
+    [ "$(getprop init.svc.surfaceflinger)" = running ] || { fail kms_sf_running; return 1; }
+    sleep 2
+    setprop vendor.superman.native_kms_release 1 || return 1
+    log "UI_release_requested sf_running=1 hwcomposer=drm"
+}
 # Separate fresh-boot service gate. Never repeat the one-shot hardware test or
 # reload modules here. Failures keep app processes held and do not kill a task
 # that may be inside a blocking KMS commit.
@@ -228,7 +285,7 @@ sf_layer_test() {
     [ "$(getprop vendor.superman.native_sf_result)" = started ] &&
     [ "$(getprop vendor.superman.native_result)" = hwc-pass ] &&
     [ -z "$(getprop vendor.superman.native_sf_layer_result)" ] || { fail sf_layer_gate; return 1; }
-    case "$(getprop ro.build.description)" in *v70-graphicsdiag-r37-smp-p75-gpu-registers-20261016*) ;; *) fail sf_layer_identity; return 1;; esac
+    case "$(getprop ro.build.description)" in *v70-graphicsdiag-r37-smp-p78-gpu-sync-20261021*) ;; *) fail sf_layer_identity; return 1;; esac
     read -r boot_sha phase extra < "$CONTRACT"
     [ -z "$extra" ] && [ "$phase" = hwc ] &&
     [ "$(sha256sum /lumia_sd/boot.img | cut -d ' ' -f 1)" = "$boot_sha" ] || { fail sf_layer_boot; return 1; }
@@ -310,12 +367,12 @@ native_ui() {
     [ "$(getprop vendor.superman.native_sf_result)" = started ] &&
     [ "$(getprop vendor.superman.native_result)" = hwc-pass ] &&
     [ -z "$(getprop vendor.superman.native_ui_result)" ] || { ui_fail gate; return 1; }
-    case "$(getprop ro.build.description)" in *v70-graphicsdiag-r37-smp-p75-gpu-registers-20261016*) ;; *) ui_fail identity; return 1;; esac
+    case "$(getprop ro.build.description)" in *v70-graphicsdiag-r37-smp-p78-gpu-sync-20261021*) ;; *) ui_fail identity; return 1;; esac
     [ "$(od -An -tx1 /proc/device-tree/compatible | tr -d ' \n')" = 6e6f6b69612c73757065726d616e0071636f6d2c6d736d3832323600 ] || { ui_fail board; return 1; }
     read -r boot_sha phase extra < "$CONTRACT"
     [ -z "$extra" ] && [ "${#boot_sha}" = 64 ] && [ "$phase" = hwc ] &&
     [ "$(sha256sum /lumia_sd/boot.img | cut -d ' ' -f 1)" = "$boot_sha" ] || { ui_fail boot; return 1; }
-    [ "$(zcat /proc/config.gz | sha256sum | cut -d ' ' -f 1)" = c58a41e6079dcc8bfa18657f2765a49b1a6819727c40a78debe9ce49e5250970 ] || { ui_fail config; return 1; }
+    [ "$(zcat /proc/config.gz | sha256sum | cut -d ' ' -f 1)" = 76cf12182ed0bea29aa7eb0916766b0b4f5715e9fb41dfed53c962d86142af73 ] || { ui_fail config; return 1; }
     sha256sum -c "$MANIFEST" >> "$LOG" 2>&1 || { ui_fail components; return 1; }
     healthy && apps_held && ui_services_alive || { ui_fail initial_state; return 1; }
     [ "$(getprop ro.hardware.egl)" = mesa ] &&
@@ -363,8 +420,13 @@ native_ui() {
         ui_sample=$((ui_sample+1))
     done
     [ "$ui_completed" = 1 ] || { ui_fail framework_timeout; return 1; }
+    ui_final_live_limit=$ui_current_latched
+    if [ "$(getprop ro.superman.async_present)" = true ]; then
+        ui_final_live_limit=$((ui_current_latched+1))
+    fi
     [ "$ui_current_latched" -gt "$ui_latched" ] &&
-    [ "$ui_current_live" = "$ui_current_latched" ] && [ "$ui_current_active" = 1 ] &&
+    [ "$ui_current_live" -ge "$ui_current_latched" ] &&
+    [ "$ui_current_live" -le "$ui_final_live_limit" ] && [ "$ui_current_active" = 1 ] &&
     grep -q 'Visible layers (count = [1-9][0-9]*)' /dev/superman-native-ui-sample-11.txt &&
     grep -q 'GLES: freedreno, FD305' /dev/superman-native-ui-sample-11.txt || { ui_fail UI_presentation_absent; return 1; }
     setprop vendor.superman.native_ui_observation complete
@@ -374,6 +436,7 @@ case "$#:$1" in
     1:--sf-services) sf_services; exit $?;;
     1:--sf-layer) sf_layer_test; exit $?;;
     1:--native-ui) native_ui; exit $?;;
+    1:--kms-ui) kms_ui; exit $?;;
     0:) ;;
     *) exit 64;;
 esac

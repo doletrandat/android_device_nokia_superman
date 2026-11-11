@@ -1,7 +1,7 @@
 # P69 bounded composition and ordinary-map metadata
 
 These are bounded diagnostic sources. The separate P69 full SD package is now
-verified locally at `/home/doletrandat/Desktop/p69-metadata-image-20261011`. It has
+verified locally at `/home/doletrandat/Superman/history/desktop/p69-metadata-image-20261011`. It has
 not been deployed or hardware tested and is not a rendering fix or proof of
 correct GPU pixels or tear-free scanout.
 P68's optional input/target pixel helper remains separate and unchanged.
@@ -58,7 +58,7 @@ It rejects NTFS/unknown mounts before opening the input log, symlinks and logs
 above 32 MiB. It issues no phone commands and writes only to stdout.
 
 Local verification and frozen build recipes are retained at
-`/home/doletrandat/Desktop/p69-metadata-diagnostics-20261011`:
+`/home/doletrandat/Superman/history/desktop/p69-metadata-diagnostics-20261011`:
 core boundary tests, 18 production-body/interface-mock cases under ASan/UBSan,
 11 decoder tests, private ARM32 Output/gralloc compilation and library links,
 static imports/exports against P68 verified providers, unchanged retained input

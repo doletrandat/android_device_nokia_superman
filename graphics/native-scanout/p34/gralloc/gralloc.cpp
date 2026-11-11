@@ -100,6 +100,15 @@ static int gbm_mod_register_buffer(const gralloc_module_t *mod,
 	struct gbm_module_t *dmod = (struct gbm_module_t *) mod;
 	int err;
 
+	/* Linear buffers need no GPU driver in the importing process. */
+	pthread_mutex_lock(&dmod->mutex);
+	if (gralloc_gbm_handle_is_direct(handle)) {
+		err = gralloc_gbm_handle_register_direct(handle);
+		pthread_mutex_unlock(&dmod->mutex);
+		return err;
+	}
+	pthread_mutex_unlock(&dmod->mutex);
+
 	err = gbm_init(dmod);
 	if (err)
 		return err;

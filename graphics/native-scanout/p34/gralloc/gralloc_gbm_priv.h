@@ -34,6 +34,9 @@ struct gbm_bo;
 
 int gralloc_gbm_handle_register(buffer_handle_t handle, struct gbm_device *gbm);
 int gralloc_gbm_handle_unregister(buffer_handle_t handle);
+/* Linear formats (BLOB, YV12) mapped through their DMA-BUF without GBM/Mesa. */
+bool gralloc_gbm_handle_is_direct(buffer_handle_t handle);
+int gralloc_gbm_handle_register_direct(buffer_handle_t handle);
 
 buffer_handle_t gralloc_gbm_bo_create(struct gbm_device *gbm,
 		int width, int height, int format, int usage, int *stride);
