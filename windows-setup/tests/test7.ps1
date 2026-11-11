@@ -42,11 +42,11 @@ function Install-BootFiles([string]$efi) { if ($efi -ne 'E:') { throw "TEST: une
 function Invoke-ChildScript([string]$file, [string[]]$scriptArgs) { Write-Host "    (mock) run $(Split-Path -Leaf $file)" -ForegroundColor DarkYellow; if ($file -notlike '*install.ps1') { Copy-Item (Join-Path $BootDir 'payload/emmc_appsboot.mbn') "$T/efi/" }; return 0 }
 function Do-CheckPc { Write-Host '  (PC check skipped in this test)' }
 switch ($Mode) {
-    'install'   { Queue-Answers 'y' '' 'y' 'n' 'INSTALL' }
-    'withdata'  { Queue-Answers 'y' '' 'y' 'y' 'no' }
-    'reinstall' { Queue-Answers 'y' '' 'y' 'INSTALL' }
-    'busy'      { Queue-Answers 'y' '' 'y' '' 'INSTALL' }
-    'installdata' { Queue-Answers 'y' '' 'y' 'y' 'INSTALL' }
+    'install'   { Queue-Answers 'y' 'y' '' 'y' '' 'n' 'INSTALL' '' }
+    'withdata'  { Queue-Answers 'y' 'y' '' 'y' '' 'y' 'no' }
+    'reinstall' { Queue-Answers 'y' 'y' '' 'y' '' 'INSTALL' '' }
+    'busy'      { Queue-Answers 'y' 'y' '' 'y' '' '' 'INSTALL' }
+    'installdata' { Queue-Answers 'y' 'y' '' 'y' '' 'y' 'INSTALL' '' }
     'restore'   { Queue-Answers 'B' '1' '' 'y' 'RESTORE' }
     'restorecancel' { Queue-Answers 'B' '1' '' 'y' 'no' }
 }

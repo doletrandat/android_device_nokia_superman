@@ -2,14 +2,16 @@
   Android 11 for the Nokia Lumia 730 (superman) - guided setup for Windows.
   Start it with Start-Here.cmd (double-click). It asks for Administrator rights by itself.
 
-  What it does, step by step and with checks:
+  What it offers, step by step and with checks:
     1. Install Android on the phone itself (boot shim, Android bootloader, Android on the internal storage)
-    2. Install Android on a microSD card instead (optional; Windows Phone stays on the phone)
-    3. Go back to Windows Phone (fresh with the stock FFU, or restore this tool's backup)
-    4. Check the files of this kit
+    2. Try Android from a microSD card instead (optional; Windows Phone stays on the phone)
+    3. Go back to Windows Phone (fresh with the stock FFU, or restore this tool's backup - experimental)
+    4. What you need and where to get it (WPinternals, drivers, the FFU from lumiadb.com)
     5. Check that this PC has what is needed (cautions only)
-    6. Advanced: move an Android that runs from the SD card onto the phone, over adb
+    6. Check the files of this kit
+    7. Advanced: move an Android that runs from the SD card onto the phone, over adb
 
+  Every screen starts on a cleared window. This file is kept plain ASCII on purpose (see the UI helpers).
   Nothing is written without a clear question first. A log of every run is kept in the logs\ folder.
 #>
 #Requires -Version 5.1
@@ -21,17 +23,23 @@ $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ------------------------------------------------------------------------------------------------------------
 $principal = New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    try { Clear-Host } catch { }
     Write-Host ''
-    Write-Host '  This tool changes the boot files on your phone and writes an SD card,' -ForegroundColor Yellow
-    Write-Host '  so Windows needs to run it as Administrator.' -ForegroundColor Yellow
+    Write-Host '  Android 11 for the Nokia Lumia 730 - setup' -ForegroundColor Cyan
     Write-Host ''
-    Read-Host '  Press Enter, then choose "Yes" in the Windows prompt' | Out-Null
+    Write-Host '  One thing first: this tool writes to your phone (and maybe an SD card),'
+    Write-Host '  and Windows only allows that for an Administrator.'
+    Write-Host ''
+    Write-Host '  Press Enter, then click "Yes" when Windows asks. ' -ForegroundColor Yellow -NoNewline
+    $Host.UI.ReadLine() | Out-Null
     try {
         Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @(
             '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $MyInvocation.MyCommand.Path + '"'))
     } catch {
-        Write-Host '  Administrator rights were not given. Nothing was done.' -ForegroundColor Red
-        Read-Host '  Press Enter to close' | Out-Null
+        Write-Host ''
+        Write-Host '  No Administrator rights, so nothing was done. Start it again whenever you like.' -ForegroundColor Red
+        Write-Host '  Press Enter to close. ' -NoNewline
+        $Host.UI.ReadLine() | Out-Null
     }
     exit
 }
@@ -85,28 +93,144 @@ $Remote = '/data/local/tmp/superman-internal'
 # ------------------------------------------------------------------------------------------------------------
 # Small helpers for talking to the user
 # ------------------------------------------------------------------------------------------------------------
-function Line { Write-Host ('  ' + ('-' * 74)) -ForegroundColor DarkGray }
-function Title([string]$t) { Write-Host ''; Line; Write-Host "  $t" -ForegroundColor Cyan; Line }
-function Say([string]$t) { Write-Host "  $t" }
-function Good([string]$t) { Write-Host "  [ok] $t" -ForegroundColor Green }
-function Warn([string]$t) { Write-Host "  [!]  $t" -ForegroundColor Yellow }
-function Bad([string]$t) { Write-Host "  [x]  $t" -ForegroundColor Red }
-function Pause-Enter([string]$t = 'Press Enter to continue') { Read-Host "  $t" | Out-Null }
+# Line-drawing characters are built from their codes so this file stays plain ASCII (Windows PowerShell 5.1
+# reads a script without a byte order mark in the PC's own code page).
+$UiWidth = 84
+$Ui = @{
+    H = [string][char]0x2500; V = [string][char]0x2502; TL = [string][char]0x250C; TR = [string][char]0x2510
+    BL = [string][char]0x2514; BR = [string][char]0x2518; Done = [string][char]0x221A; Now = [string][char]0x25CF
+    Todo = [string][char]0x25CB; Arrow = [string][char]0x25BA
+}
+function Clear-Screen { try { Clear-Host } catch { } }
+function Line { Write-Host ('  ' + ($Ui.H * $UiWidth)) -ForegroundColor DarkGray }
+function Show-Banner {
+    $name = 'Android 11 for the Nokia Lumia 730'; $tag = 'setup ' + [string][char]0x00B7 + ' alpha'
+    $gap = $UiWidth - 2 - 2 - $name.Length - $tag.Length - 2
+    Write-Host ''
+    Write-Host ('  ' + $Ui.TL + ($Ui.H * ($UiWidth - 2)) + $Ui.TR) -ForegroundColor DarkCyan
+    Write-Host ('  ' + $Ui.V + '  ') -ForegroundColor DarkCyan -NoNewline
+    Write-Host $name -ForegroundColor White -NoNewline
+    Write-Host ((' ' * $gap) + $tag + '  ') -ForegroundColor DarkGray -NoNewline
+    Write-Host $Ui.V -ForegroundColor DarkCyan
+    Write-Host ('  ' + $Ui.BL + ($Ui.H * ($UiWidth - 2)) + $Ui.BR) -ForegroundColor DarkCyan
+}
+function Show-Screen([string]$title, [string]$sub = '', [string[]]$steps = @(), [int]$current = 0) {
+    # Every screen starts on a clean window: banner, title, an optional "where am I" line of steps.
+    Clear-Screen
+    Show-Banner
+    Write-Host ''
+    Write-Host "  $title" -ForegroundColor Cyan
+    if ($sub) { Write-Host "  $sub" -ForegroundColor DarkGray }
+    if ($steps.Count -gt 0) {
+        Write-Host ''
+        Write-Host '  ' -NoNewline
+        for ($i = 1; $i -le $steps.Count; $i++) {
+            if ($i -lt $current) { Write-Host ($Ui.Done + ' ' + $steps[$i - 1]) -ForegroundColor DarkGreen -NoNewline }
+            elseif ($i -eq $current) { Write-Host ($Ui.Now + ' ' + $steps[$i - 1]) -ForegroundColor White -NoNewline }
+            else { Write-Host ($Ui.Todo + ' ' + $steps[$i - 1]) -ForegroundColor DarkGray -NoNewline }
+            if ($i -lt $steps.Count) { Write-Host ('  ' + ($Ui.H * 3) + '  ') -ForegroundColor DarkGray -NoNewline }
+        }
+        Write-Host ''
+    }
+    Line
+    Write-Host ''
+}
+function Split-Lines([string]$t, [int]$width) {
+    # Breaks a long line at spaces so nothing runs past the right edge of the screen.
+    $out = @()
+    while ($t.Length -gt $width) {
+        $cut = $t.LastIndexOf(' ', $width)
+        if ($cut -le 0) { break }
+        $out += $t.Substring(0, $cut); $t = $t.Substring($cut + 1)
+    }
+    $out += $t
+    return , $out
+}
+function Write-Marked([string]$mark, [string]$markColor, [string]$text, [string]$textColor = '') {
+    # A short mark in the left margin, then the text, wrapped and lined up under itself.
+    $lines = Split-Lines $text ($UiWidth + 2 - $mark.Length)
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($i -eq 0) { Write-Host $mark -ForegroundColor $markColor -NoNewline } else { Write-Host (' ' * $mark.Length) -NoNewline }
+        if ($textColor) { Write-Host $lines[$i] -ForegroundColor $textColor } else { Write-Host $lines[$i] }
+    }
+}
+function Say([string]$t) { Write-Marked '  ' 'Gray' $t }
+function Note([string]$t) { Write-Marked '  ' 'DarkGray' $t 'DarkGray' }
+function Head([string]$t) { Write-Host ''; Write-Host "  $t" -ForegroundColor White }
+function Item([string]$t) { Write-Marked '   -  ' 'DarkGray' $t }
+function Step([string]$n, [string]$t) { Write-Marked ("   {0}  " -f $n) 'Cyan' $t }
+function More([string]$t) { Write-Marked '      ' 'Gray' $t }
+function Good([string]$t) { Write-Marked ('   ' + $Ui.Done + '  ') 'Green' $t 'Green' }
+function Warn([string]$t) { Write-Marked '   !  ' 'Yellow' $t 'Yellow' }
+function Bad([string]$t) { Write-Marked '   x  ' 'Red' $t 'Red' }
+function Info([string]$t) { Write-Marked '   i  ' 'DarkCyan' $t }
+function Field([string]$label, [string[]]$lines) {
+    # A label in the left column, its text (one or more lines) to the right of it.
+    Write-Host ('   ' + $label.PadRight(21)) -ForegroundColor Cyan -NoNewline
+    Write-Host $lines[0]
+    for ($i = 1; $i -lt $lines.Count; $i++) { Write-Host ((' ' * 24) + $lines[$i]) }
+}
+function Choice([string]$key, [string]$text, [string]$note = '', [string]$tag = '', [string]$tagColor = 'Green') {
+    # One line of a menu: a key cap, what it does, and a quieter second line.
+    Write-Host '   ' -NoNewline
+    Write-Host " $key " -ForegroundColor Black -BackgroundColor Cyan -NoNewline
+    Write-Host "  $text" -ForegroundColor White -NoNewline
+    if ($tag) { Write-Host "   $tag" -ForegroundColor $tagColor -NoNewline }
+    Write-Host ''
+    if ($note) { Write-Host "        $note" -ForegroundColor DarkGray }
+}
+function Show-Danger([string[]]$lines) {
+    # The one box that should make people stop and read.
+    Write-Host ''
+    Write-Host ('  ' + $Ui.TL + ($Ui.H * ($UiWidth - 2)) + $Ui.TR) -ForegroundColor Red
+    $wrapped = @()
+    foreach ($l in $lines) { $wrapped += (Split-Lines $l ($UiWidth - 4)) }
+    foreach ($l in $wrapped) {
+        Write-Host ('  ' + $Ui.V + ' ') -ForegroundColor Red -NoNewline
+        Write-Host ($l.PadRight($UiWidth - 4)) -ForegroundColor Yellow -NoNewline
+        Write-Host (' ' + $Ui.V) -ForegroundColor Red
+    }
+    Write-Host ('  ' + $Ui.BL + ($Ui.H * ($UiWidth - 2)) + $Ui.BR) -ForegroundColor Red
+}
+function Read-Raw {
+    # The one place that reads the keyboard.
+    $a = $Host.UI.ReadLine()
+    if ($null -eq $a) { return '' }
+    return [string]$a
+}
+function Read-Line([string]$prompt) {
+    Write-Host "  $prompt " -ForegroundColor White -NoNewline
+    Write-Host ($Ui.Arrow + ' ') -ForegroundColor Cyan -NoNewline
+    return (Read-Raw)
+}
+function Pause-Enter([string]$t = 'Press Enter to continue') {
+    Write-Host ''
+    Write-Host "  $t " -ForegroundColor DarkGray -NoNewline
+    Read-Raw | Out-Null
+}
 function Ask-YesNo([string]$q, [bool]$default = $true) {
     $hint = '[Y/n]'; if (-not $default) { $hint = '[y/N]' }
     while ($true) {
-        $a = (Read-Host "  $q $hint").Trim().ToLower()
+        $a = (Read-Line "$q $hint").Trim().ToLower()
         if ($a -eq '') { return $default }
         if ($a -in 'y', 'yes') { return $true }
         if ($a -in 'n', 'no') { return $false }
+        Note 'Just Y or N, please.'
     }
 }
 function Ask-Choice([string]$q, [string[]]$allowed) {
     while ($true) {
-        $a = (Read-Host "  $q").Trim().ToUpper()
+        $a = (Read-Line $q).Trim().ToUpper()
         if ($allowed -contains $a) { return $a }
-        Say ("Please answer with one of: " + ($allowed -join ', '))
+        Note ("That's not one of the options. Try: " + ($allowed -join ', '))
     }
+}
+function Ask-Word([string]$word, [string]$otherwise) {
+    # For the steps that cannot be undone: the user types a whole word, in capitals.
+    return ((Read-Line "Type $word to go ahead, or anything else to $otherwise").Trim() -ceq $word)
+}
+function Open-Web([string]$url) {
+    try { Start-Process $url | Out-Null; Good "Opened $url in your browser." } catch { Say "Couldn't open the browser. The address is: $url" }
 }
 function Get-Sha([string]$path) { return (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLower() }
 function Format-Size([double]$bytes) {
@@ -153,8 +277,30 @@ function Find-FirstFile([string[]]$folders, [string]$filter, [int]$depth) {
     }
     return $null
 }
+function Show-WhereToGet {
+    # The short "shopping list". Facts checked in November 2026.
+    Head 'Where everything comes from'
+    Field 'WPinternals' @('github.com/ReneLergner/WPinternals  (under Releases)')
+    Field 'Lumia USB drivers' @('Install Windows Device Recovery Tool (WDRT) once.', 'It can''t download firmware any more, but it still', 'brings the drivers. lumiadb.com links an offline', 'installer ("WDRT" in the top bar).')
+    Field 'Stock FFU' @('lumiadb.com -> Lumia 730 Dual SIM (RM-1040) -> the FFU', 'for your product code. The code is on the label under', 'the battery ("CODE: 059W..."). Not listed? LumiaDB', 'says any RM-1040 FFU will do.')
+    Field 'Files for unlocking' @('Emergency files: same LumiaDB page. "Donor FFU": top', 'bar. The guide "How to Unlock Your Lumia''s Bootloader"', 'at lumiadb.com/guides walks you through it.')
+    Write-Host ''
+    Note 'Heads-up: the "Download" tab inside WPinternals no longer works. Microsoft switched those servers off in 2024, so the FFU has to come from LumiaDB.'
+}
+function Do-WhatYouNeed {
+    Show-Screen 'What you need, and where to get it' 'Nothing is installed or changed here.'
+    Head 'For any install'
+    Item 'A Nokia Lumia 730 (RM-1040). The 735 is a different phone and won''t work.'
+    Item 'Its bootloader unlocked with WPinternals.'
+    Item 'A Windows 10 or 11 PC, a USB cable, and the battery above 50 %.'
+    Item 'The stock FFU of your phone, saved somewhere safe. It''s your ticket back to Windows Phone, so don''t skip it.'
+    Head 'Only for the microSD option'
+    Item 'A microSD card of 4 GB or more (it gets erased) and a card reader.'
+    Show-WhereToGet
+    Write-Host ''
+    if (Ask-YesNo 'Open lumiadb.com in your browser now?' $false) { Open-Web 'https://lumiadb.com' }
+}
 function Do-CheckPc {
-    Title 'Is this PC ready?   (cautions only - nothing here stops you)'
     $cautions = 0
     $userDirs = @()
     foreach ($n in 'Desktop', 'Downloads', 'Documents') { if ($env:USERPROFILE) { $userDirs += (Join-Path $env:USERPROFILE $n) } }
@@ -162,16 +308,16 @@ function Do-CheckPc {
     # Windows and its built-in tools
     try {
         $v = [Environment]::OSVersion.Version
-        if ($v.Major -ge 10) { Good "Windows version $v" } else { Warn "Windows version $v - this tool was written for Windows 10 and 11."; $cautions++ }
+        if ($v.Major -ge 10) { Good "Windows $($v.Major) (build $($v.Build))" } else { Warn "Windows version $v - this was written for Windows 10 and 11, so some things may not work."; $cautions++ }
     } catch { }
     foreach ($exe in 'bcdedit.exe', 'diskpart.exe') {
-        if (Get-Command $exe -ErrorAction SilentlyContinue) { Good "$exe is available" } else { Warn "$exe was not found. It is part of Windows and is needed to prepare the phone / the SD card."; $cautions++ }
+        if (Get-Command $exe -ErrorAction SilentlyContinue) { Good "$exe is there" } else { Warn "$exe is missing. It's part of Windows and is needed to prepare the phone / the SD card."; $cautions++ }
     }
 
     # Room for backups, downloads and logs next to this tool
     $freeHere = Get-FreeSpace $Here
-    if ($freeHere -ge 300MB) { Good ("Free space where this tool is: " + (Format-Size $freeHere)) }
-    elseif ($freeHere -ge 0) { Warn ("Only " + (Format-Size $freeHere) + " free where this tool is. Backups and downloads need about 300 MB."); $cautions++ }
+    if ($freeHere -ge 300MB) { Good ("Free space next to this tool: " + (Format-Size $freeHere)) }
+    elseif ($freeHere -ge 0) { Warn ("Only " + (Format-Size $freeHere) + " free next to this tool. Backups and downloads want about 300 MB."); $cautions++ }
 
     # Internet (only for the two small downloads)
     $online = $false
@@ -181,8 +327,8 @@ function Do-CheckPc {
         if ($wait.AsyncWaitHandle.WaitOne(4000) -and $tcp.Connected) { $online = $true }
         $tcp.Close()
     } catch { }
-    if ($online) { Good 'Internet connection works (needed once, to download the boot shim, about 1 MB)' }
-    else { Warn 'No internet connection found. The tool downloads the boot shim (about 1 MB) the first time.'; $cautions++ }
+    if ($online) { Good 'Internet works (needed once, for a 1 MB download)' }
+    else { Warn 'No internet. The boot shim (about 1 MB) gets downloaded the first time, so you''ll need it then.'; $cautions++ }
 
     # Lumia USB drivers - they come with Windows Device Recovery Tool (WDRT). WPinternals needs them to see the phone.
     $drivers = $null
@@ -201,52 +347,50 @@ function Do-CheckPc {
             if ($pnp -match '(?i)Nokia|Microsoft Mobile') { $drivers = 'a Nokia / Microsoft Mobile driver in the Windows driver store' }
         } catch { }
     }
-    if ($drivers) { Good "Lumia USB drivers: found ($drivers)" }
+    $missing = $false
+    if ($drivers) { Good "Lumia USB drivers ($drivers)" }
     else {
-        Warn 'Lumia USB drivers: not found. Without them WPinternals cannot see the phone.'
-        Say '       They come with "Windows Device Recovery Tool" (WDRT) from Microsoft: install it once,'
-        Say '       you do not have to use it. If WPinternals already sees your phone, ignore this.'
-        $cautions++
+        Warn 'Lumia USB drivers: couldn''t find them. Without them WPinternals can''t see the phone. They come with Windows Device Recovery Tool (WDRT). If WPinternals already sees your phone, you''re fine - ignore this.'
+        $cautions++; $missing = $true
     }
 
     # WPinternals (a portable program, so this is only a look in the usual places)
     $wpi = $null
-    try { $proc = Get-Process -Name 'WPinternals' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($proc) { $wpi = 'it is running' } } catch { }
+    try { $proc = Get-Process -Name 'WPinternals' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($proc) { $wpi = 'it''s running' } } catch { }
     if (-not $wpi) {
         $wpiDirs = @() + $userDirs + @((Split-Path -Parent $Here))
         foreach ($d in $env:ProgramFiles, ${env:ProgramFiles(x86)}) { if ($d) { $wpiDirs += $d } }
         $f = Find-FirstFile $wpiDirs 'WPinternals.exe' 3
         if ($f) { $wpi = $f }
     }
-    if ($wpi) { Good "WPinternals: found ($wpi)" }
+    if ($wpi) { Good "WPinternals ($wpi)" }
     else {
-        Warn 'WPinternals: not found in the usual places. Make sure you have it (github.com/ReneLergner/WPinternals);'
-        Say '       it unlocks the bootloader and switches the phone to Mass Storage Mode.'
-        $cautions++
+        Warn 'WPinternals: didn''t see it in the usual folders. You need it to unlock the phone and to switch it to Mass Storage Mode.'
+        $cautions++; $missing = $true
     }
 
     # Stock FFU - the way back to Windows Phone
     $ffuDirs = @() + $userDirs
     if ($env:ProgramData) { $ffuDirs += (Join-Path $env:ProgramData 'WPinternals\Repository'); $ffuDirs += (Join-Path $env:ProgramData 'Microsoft\Packages\Products') }
     $ffu = Find-FirstFile $ffuDirs '*.ffu' 4
-    if ($ffu) { Good "A stock FFU file: found ($ffu)" }
+    if ($ffu) { Good "A stock FFU ($ffu)" }
     else {
-        Warn 'No .ffu file found in the usual places. Make sure you have the stock FFU of YOUR phone saved:'
-        Say '       it is the way back to Windows Phone. WPinternals can download it (Download tab).'
-        $cautions++
+        Warn 'Stock FFU: no .ffu file in the usual folders. It''s your way back to Windows Phone, so make sure you have the one for your phone before you install.'
+        $cautions++; $missing = $true
     }
 
-    # adb - only for the internal storage part
+    # adb - only for the advanced "move from SD card" part
     $adb = $null
     $local = Join-Path $Tools 'platform-tools\adb.exe'
     if (Test-Path -LiteralPath $local) { $adb = $local } else { $c = Get-Command adb.exe -ErrorAction SilentlyContinue; if ($c) { $adb = $c.Source } }
-    if ($adb) { Good "adb: found ($adb)" } else { Say '[i]  adb: not here yet. Only the internal storage part needs it, and offers to download it then.' }
+    if ($adb) { Good "adb ($adb)" } else { Info 'adb: not here, and that''s fine. Only the advanced option uses it, and offers to fetch it.' }
 
     Write-Host ''
     if ($cautions -eq 0) { Good 'This PC looks ready.' }
     else {
-        Warn "$cautions point(s) to look at above. These are cautions, not errors:"
-        Say '     the checks look in the usual places only, so they can miss things. You can continue.'
+        Warn "$cautions thing(s) worth a look. They're cautions, not errors: this check only looks in"
+        More 'the usual places, so it can miss things. You can carry on anyway.'
+        if ($missing) { Show-WhereToGet }
     }
 }
 
@@ -295,35 +439,35 @@ function Find-EfiEsp {
 function Select-EfiEsp {
     # Returns a drive letter such as 'E:' or $null when the user gives up.
     while ($true) {
-        Say 'Looking for the phone...'
+        Write-Host ''
+        Say 'Looking for your phone...'
         $hits = @(Find-EfiEsp)
         if ($hits.Count -eq 0) {
-            Warn 'No Lumia EFIESP volume found.'
-            Say 'Check that:'
-            Say '  - WPinternals says the phone is in Mass Storage Mode'
-            Say '  - the USB cable is plugged in and Windows shows new drives (MainOS, Data, ...)'
-            Say '  - you cancelled every "You need to format the disk" window (never format!)'
-            $a = Ask-Choice 'R = look again, M = type the drive letter myself, Q = back to the menu' @('R', 'M', 'Q')
+            Warn 'Couldn''t find the phone yet. A few things to check:'
+            Item 'WPinternals says the phone is in Mass Storage Mode'
+            Item 'the USB cable is in, and Windows shows new drives (MainOS, Data, ...)'
+            Item 'you clicked Cancel on every "You need to format the disk" window'
+            $a = Ask-Choice 'R = look again   M = I''ll type the drive letter   Q = back to the menu' @('R', 'M', 'Q')
             if ($a -eq 'Q') { return $null }
             if ($a -eq 'M') {
-                $l = (Read-Host '  Drive letter of the EFIESP volume (for example E)').Trim().TrimEnd(':').ToUpper()
-                if ($l -notmatch '^[A-Z]$') { Warn 'That is not a drive letter.'; continue }
+                $l = (Read-Line 'Drive letter of the phone''s EFIESP drive (for example E)').Trim().TrimEnd(':').ToUpper()
+                if ($l -notmatch '^[A-Z]$') { Warn 'That isn''t a drive letter.'; continue }
                 $info = $null
                 try { $info = Get-EfiEspInfo ($l + ':\') } catch { }
-                if (-not $info) { Bad "$l`: does not look like a Lumia EFIESP volume (its boot files are not there)."; continue }
+                if (-not $info) { Bad "$l`: doesn't look like a Lumia's EFIESP drive (its boot files aren't there)."; continue }
                 $hits = @([pscustomobject]@{ Letter = $l; Root = $l + ':\'; Device = $info.Device; IsSuperman = $info.IsSuperman
                         Size = 0; DiskNumber = -1; PartitionNumber = -1; DiskName = '(typed by you)'; DiskSize = 0; Bus = '?' })
             } else { continue }
         }
         $pick = $hits[0]
         if ($hits.Count -gt 1) {
-            Warn 'More than one EFIESP volume found (is more than one phone connected?):'
-            for ($i = 0; $i -lt $hits.Count; $i++) { Say ("  {0}) {1}  {2}  on {3}" -f ($i + 1), $hits[$i].Root, $hits[$i].Device, $hits[$i].DiskName) }
-            $n = Ask-Choice 'Which one? (number)' @(1..$hits.Count | ForEach-Object { "$_" })
+            Warn 'Found more than one phone. Is a second Lumia plugged in?'
+            for ($i = 0; $i -lt $hits.Count; $i++) { Step ($i + 1) ("{0}  {1}  on {2}" -f $hits[$i].Root, $hits[$i].Device, $hits[$i].DiskName) }
+            $n = Ask-Choice 'Which one is it? (number)' @(1..$hits.Count | ForEach-Object { "$_" })
             $pick = $hits[[int]$n - 1]
         }
         if (-not $pick.Letter) {
-            Say 'Windows gave this volume no drive letter. The boot menu editor needs one, so the tool assigns one now.'
+            Note 'Windows gave that drive no letter, and the boot menu editor needs one. Assigning one...'
             Add-PartitionAccessPath -DiskNumber $pick.DiskNumber -PartitionNumber $pick.PartitionNumber -AssignDriveLetter | Out-Null
             Start-Sleep -Seconds 2
             $p2 = Get-Partition -DiskNumber $pick.DiskNumber -PartitionNumber $pick.PartitionNumber
@@ -331,21 +475,20 @@ function Select-EfiEsp {
             if ($pick.Letter -notmatch '^[A-Za-z]$') { throw 'Windows did not assign a drive letter to the EFIESP volume.' }
             $pick.Root = $pick.Letter + ':\'
         }
-        Write-Host ''
-        Say 'Found this:'
-        Say ("    Drive        : {0}:" -f $pick.Letter.ToUpper())
-        Say ("    Phone        : {0}" -f $pick.Device)
+        Head 'Found it'
+        Field 'Drive' @(("{0}:   (the phone's small boot drive, EFIESP)" -f $pick.Letter.ToUpper()))
+        Field 'Phone' @($pick.Device)
         if ($pick.DiskNumber -ge 0) {
-            Say ("    Volume size  : {0}" -f (Format-Size $pick.Size))
-            Say ("    On disk      : {0} ({1}, {2})" -f $pick.DiskName, (Format-Size $pick.DiskSize), $pick.Bus)
+            Field 'Drive size' @((Format-Size $pick.Size))
+            Field 'On disk' @(("{0} ({1}, {2})" -f $pick.DiskName, (Format-Size $pick.DiskSize), $pick.Bus))
         }
         Write-Host ''
         if (-not $pick.IsSuperman) {
-            Bad 'This is a Lumia, but not a Lumia 730 (no Nokia.DEVICE_SUPERMAN package). This Android only runs on the 730.'
+            Bad 'That''s a Lumia, but not a Lumia 730 (no Nokia.DEVICE_SUPERMAN package on it). This Android only runs on the 730, so nothing was touched.'
             if (-not (Ask-YesNo 'Look again?')) { return $null }
             continue
         }
-        if (Ask-YesNo ("Is {0}: your Lumia 730? The tool will write its boot files there." -f $pick.Letter.ToUpper())) {
+        if (Ask-YesNo ("Is {0}: your Lumia 730? The boot files get written there." -f $pick.Letter.ToUpper())) {
             return ($pick.Letter.ToUpper() + ':')
         }
         if (-not (Ask-YesNo 'Look again?')) { return $null }
@@ -361,12 +504,12 @@ function Get-QuickStart {
     foreach ($c in $candidates) {
         if ((Test-Path -LiteralPath (Join-Path $c.FullName 'install.ps1')) -and (Test-Path -LiteralPath (Join-Path $c.FullName 'bootshim.efi'))) { return $c.FullName }
     }
-    Say 'The boot shim comes from the Mainline4Lumia project (LumiaQuickStart). It is not part of this kit,'
-    Say 'so the tool downloads it now from its GitHub page (about 1 MB):'
-    Say "    $LqsUrl"
+    Write-Host ''
+    Say 'One small download is needed: the "boot shim" from the Mainline4Lumia project (LumiaQuickStart). It lets the phone start something other than Windows Phone. It isn''t ours to ship, so it comes straight from their GitHub page (about 1 MB):'
+    Note "  $LqsUrl"
     if (-not (Ask-YesNo 'Download it now?')) {
-        Say 'You can also download it yourself and unpack it into:'
-        Say ("    " + (Join-Path $Tools 'LumiaQuickStart'))
+        Say 'No problem. You can also download it yourself and unpack it into:'
+        Note ("  " + (Join-Path $Tools 'LumiaQuickStart'))
         return $null
     }
     New-Item -ItemType Directory -Path $Tools -Force | Out-Null
@@ -386,17 +529,17 @@ function Install-BootFiles([string]$efi) {
     $stage2 = Join-Path $root 'Stage2.efi'
     $backup = New-BackupFolder 'efiesp'
     Copy-Item -LiteralPath (Join-Path $root 'EFI\Microsoft\Boot\BCD') -Destination (Join-Path $backup 'BCD.before') -Force
-    Good "Boot menu saved to $backup"
+    Good "Saved a copy of the phone's boot menu first: $backup"
 
     # --- boot shim ---
     if ((Test-Path -LiteralPath $shim) -and (Test-Path -LiteralPath $stage2)) {
-        Good 'The boot shim is already on the phone; that part is skipped.'
+        Good 'The boot shim is already on the phone, so that part is done.'
         if ((Get-Sha $shim) -ne $LqsHashes['bootshim.efi'] -or (Get-Sha $stage2) -ne $LqsHashes['Stage2.efi']) {
-            Warn 'It is a different version than the one this kit was tested with. It is left as it is.'
+            Warn 'It''s a different version from the one this kit was tested with. Leaving it alone.'
         }
     } else {
         $lqs = Get-QuickStart
-        if (-not $lqs) { throw 'The boot shim is needed to continue.' }
+        if (-not $lqs) { throw 'The install can''t go on without the boot shim.' }
         foreach ($n in 'bootshim.efi', 'Stage2.efi') {
             if ((Get-Sha (Join-Path $lqs $n)) -ne $LqsHashes[$n]) { throw "LumiaQuickStart's $n is not the version this kit was tested with. Stopping to be safe." }
         }
@@ -404,21 +547,21 @@ function Install-BootFiles([string]$efi) {
             Warn "LumiaQuickStart's install.ps1 is a different version than the tested one."
             if (-not (Ask-YesNo 'Run it anyway?' $false)) { throw 'Stopped before the boot shim was installed.' }
         }
-        Say 'Installing the boot shim (LumiaQuickStart)...'
+        Say 'Putting the boot shim on the phone...'
         $rc = Invoke-ChildScript (Join-Path $lqs 'install.ps1') @('-efiesp_location', $efi)
         if ($rc -ne 0) { throw "LumiaQuickStart stopped with an error (code $rc). See the messages above." }
         if (-not ((Test-Path -LiteralPath $shim) -and (Test-Path -LiteralPath $stage2))) { throw 'LumiaQuickStart ran, but the boot shim files are not on the phone.' }
-        Good 'Boot shim installed.'
+        Good 'Boot shim is on.'
     }
 
     # --- Android bootloader + boot menu default ---
-    Say 'Installing the Android bootloader and making it the default boot entry...'
+    Say 'Adding the Android bootloader and making it the default in the boot menu...'
     $rc = Invoke-ChildScript $BootScript @('-EfiEsp', $efi)
     if ($rc -ne 0) { throw "The boot installer stopped with an error (code $rc). See the messages above. The phone's boot menu backup is in $backup" }
     $lk = Join-Path $root 'emmc_appsboot.mbn'
     if ((Get-Sha $lk) -ne $KitHashes['files\boot-installer\payload\emmc_appsboot.mbn']) { throw 'The Android bootloader on the phone does not match after copying.' }
     try { Write-VolumeCache -DriveLetter $efi.Substring(0, 1) | Out-Null } catch { }
-    Good 'Android bootloader installed and checked. The boot menu now starts it by default (5 second menu).'
+    Good 'Android bootloader is on and checked. The phone now starts it by default.'
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -709,44 +852,42 @@ function Test-Card([int]$number) {
     }
 }
 function Step-SdCard([int[]]$excludeDisks) {
-    Say 'Put the microSD card into this PC (card reader or adapter).'
-    Say 'Everything on the card will be erased. A 4 GB card is enough.'
+    Say 'Pop the microSD card into this PC (card reader or adapter). Everything on it gets erased, so check there''s nothing you want on there.'
     Pause-Enter 'Press Enter when the card is in'
     while ($true) {
         $cards = @(Get-CardCandidates $excludeDisks)
         if ($cards.Count -eq 0) {
-            Warn 'No SD card or USB drive of 4 GB or more found.'
+            Warn 'Can''t see an SD card or USB drive of 4 GB or more.'
             if (-not (Ask-YesNo 'Look again?')) { return $false }
             continue
         }
-        Write-Host ''
-        Say 'Removable drives found (the PC''s own disks and the phone are never listed):'
+        Head 'Removable drives on this PC'
+        Note 'Your PC''s own disks and the phone never show up in this list.'
         foreach ($c in $cards) { Show-Disk $c }
-        Write-Host ''
         $allowed = @($cards | ForEach-Object { "$($_.Number)" }) + @('R', 'Q')
-        $a = Ask-Choice 'Type the disk number of your SD card (R = look again, Q = back to the menu)' $allowed
+        $a = Ask-Choice 'Which disk number is your SD card?   (R = look again, Q = back to the menu)' $allowed
         if ($a -eq 'Q') { return $false }
         if ($a -eq 'R') { continue }
         $disk = Get-Disk -Number ([int]$a)
-        if ($disk.IsReadOnly) { Bad 'This card is write-protected (check the lock switch on the adapter).'; continue }
-        Write-Host ''
-        Warn ("Disk {0} - {1}, {2} - will be ERASED completely." -f $disk.Number, $disk.FriendlyName, (Format-Size $disk.Size))
-        if ($disk.Size -gt 130GB) { Warn 'This is larger than a usual SD card. Make sure it is not an external hard drive.' }
-        $t = (Read-Host '  Type ERASE to continue, anything else to choose again').Trim()
-        if ($t -cne 'ERASE') { continue }
+        if ($disk.IsReadOnly) { Bad 'That card is write-protected. Check the little lock switch on the adapter.'; continue }
+        $box = @(("Disk {0} - {1}, {2}" -f $disk.Number, $disk.FriendlyName, (Format-Size $disk.Size)), 'Everything on it will be ERASED.')
+        if ($disk.Size -gt 130GB) { $box += 'That''s big for an SD card. Make sure it isn''t an external hard drive!' }
+        Show-Danger $box
+        if (-not (Ask-Word 'ERASE' 'pick again')) { continue }
 
-        Say 'Checking the image file of this kit...'
+        Write-Host ''
+        Say 'Checking this kit''s image file...'
         Test-KitFile 'files\superman-alpha-sdcard.img.gz'
-        Good 'Image file is intact.'
+        Good 'Image file is fine.'
         Say 'Clearing the card...'
         Clear-Card $disk.Number
-        Say 'Writing (about 2.6 GB; a few minutes, depending on the card)...'
+        Say 'Writing 2.6 GB. A few minutes, depending on the card...'
         Write-Card $disk.Number
-        Say 'Reading the card back to check every byte...'
+        Say 'Reading it all back to make sure every byte landed...'
         $h = Test-Card $disk.Number
         if ($h -ne $ImageSha) { throw "The card does not hold what was written (read back $h). Try again, or use another card or reader." }
-        Good 'SD card written and verified.'
-        Say 'If Windows now asks to format a disk: choose Cancel. Then remove the card.'
+        Good 'SD card written and double-checked.'
+        Say 'If Windows now offers to format a disk, click Cancel. Then take the card out.'
         return $true
     }
 }
@@ -874,15 +1015,19 @@ function Copy-DiskRange([int]$number, [long]$first, [long]$last, [string]$file, 
 function Step-PreparePhone {
     # Mass Storage Mode -> find and confirm the EFIESP -> boot shim + Android bootloader.
     # Returns @{ Efi = 'E:'; Disk = <disk number> } or $null when the user stops.
-    Say '1. Open WPinternals and connect the phone with the USB cable.'
-    Say '2. In WPinternals choose "Mode" (left side), then "Mass Storage Mode".'
-    Say '3. Wait until WPinternals says the phone is in Mass Storage Mode. Windows shows new drives.'
+    Say 'First the phone has to show up on this PC as a set of drives. WPinternals does that:'
+    Write-Host ''
+    Step 1 'Open WPinternals and plug the phone in.'
+    Step 2 'On the left, click "Mode", then pick "Mass Storage Mode".'
+    Step 3 'Wait until WPinternals says the phone is in Mass Storage Mode. Windows will pop up a few new drives (MainOS, Data, ...).'
+    Write-Host ''
     Warn 'If Windows says "You need to format the disk": click Cancel. Never format.'
-    Pause-Enter 'Press Enter when the phone is in Mass Storage Mode'
+    Pause-Enter 'Press Enter once the phone is in Mass Storage Mode'
     $efi = Select-EfiEsp
-    if (-not $efi) { Say 'Nothing was changed.'; return $null }
+    if (-not $efi) { Say 'OK, stopping here. Nothing was changed.'; return $null }
     $diskNumber = -1
     try { $diskNumber = [int](Get-Partition -DriveLetter $efi.Substring(0, 1)).DiskNumber } catch { }
+    Write-Host ''
     Test-KitFile 'files\boot-installer\Install-SupermanBoot.ps1'
     Test-KitFile 'files\boot-installer\payload\emmc_appsboot.mbn'
     Install-BootFiles $efi
@@ -902,17 +1047,18 @@ function Step-WritePhone([int]$number) {
         throw "This phone's partition table is not one this tool can convert: $m.`nNothing was written. (An unlocked Lumia 730 with Windows Phone on it is expected.)"
     }
     $dataBytes = ($plan.DataLast - $plan.DataFirst + 1) * 512
-    Write-Host ''
     if ($plan.Layout -eq 'windows') {
-        Say ("Windows Phone's Data partition (" + (Format-Size (($plan.OldDataLast - $plan.OldDataFirst + 1) * 512)) + ") will become:")
-        Say '    64 MB   Android boot'
-        Say '    2.0 GB  Android system'
-        Say ("    " + (Format-Size $dataBytes) + "  your apps and files")
-        Say 'Every other partition (firmware, calibration, the boot files, MainOS) stays exactly as it is.'
+        Say ("Here's the plan. Windows Phone's Data partition (" + (Format-Size (($plan.OldDataLast - $plan.OldDataFirst + 1) * 512)) + ") gets split into three:")
+        Write-Host ''
+        Field 'Android boot' @('64 MB')
+        Field 'Android system' @('2.0 GB')
+        Field 'Your apps and files' @((Format-Size $dataBytes))
+        Write-Host ''
+        Note 'Everything else on the phone (firmware, calibration, boot files, MainOS) stays as it is.'
     } else {
-        Warn 'Android is already installed on this phone''s internal storage.'
-        Say 'Continuing installs it again and ERASES the apps and files of that Android.'
+        Warn 'This phone already has Android on its internal storage. Going on installs it fresh and ERASES the apps and files of that Android.'
     }
+    Write-Host ''
 
     # ---- backups ----
     $b = New-BackupFolder 'phone'
@@ -929,50 +1075,53 @@ function Step-WritePhone([int]$number) {
         $h = Copy-DiskRange $number $efiRange[0] $efiRange[1] (Join-Path $b 'EFIESP.img') 'the boot partition'
         if ((Get-Sha (Join-Path $b 'EFIESP.img')) -ne $h) { throw 'The backup of the boot partition (EFIESP) did not save correctly. Nothing was written.' }
     }
-    Good "Partition table and boot partition backed up to $b"
+    Good "Backed up the partition table and the boot partition: $b"
 
     if ($plan.Layout -eq 'windows') {
-        Write-Host ''
-        Say 'Optional: keep a full copy of Windows Phone''s Data partition (your Windows Phone apps and files).'
-        Say ("It needs " + (Format-Size (($plan.OldDataLast - $plan.OldDataFirst + 1) * 512)) + " on this PC and several minutes. You do NOT need it for the normal way back")
-        Say '(flashing the stock FFU, which gives a factory-fresh Windows Phone).'
-        if (Ask-YesNo 'Make this copy?' $false) {
+        Head 'Optional: keep a copy of your Windows Phone'
+        Say ("This saves Windows Phone's whole Data partition (your apps, photos, settings) to this PC. It takes " + (Format-Size (($plan.OldDataLast - $plan.OldDataFirst + 1) * 512)) + " of disk space and several minutes. With it, option 3 can later put Windows Phone back exactly as it is now. Without it you can still go back, but to a factory-fresh Windows Phone (stock FFU).")
+        Warn 'EXPERIMENTAL: restoring from this copy passed its tests on the PC, but hasn''t been tried on a real phone yet. Don''t count on it as your only way back; keep the stock FFU.'
+        if (Ask-YesNo 'Make that copy?' $false) {
             $need = ($plan.OldDataLast - $plan.OldDataFirst + 1) * 512
             $free = Get-FreeSpace $b
             $ok = $false
             if ($free -ge 0 -and $free -lt ($need + 200MB)) {
-                Warn ("Not enough free space for the copy: it needs " + (Format-Size $need) + ", but only " + (Format-Size $free) + " is free where this tool is.")
+                Warn ("Not enough room for the copy: it needs " + (Format-Size $need) + ", and only " + (Format-Size $free) + " is free next to this tool.")
             } else {
                 $file = Join-Path $b 'Data.img'
                 try {
                     $h = Copy-DiskRange $number $plan.OldDataFirst $plan.OldDataLast $file 'the Data partition'
                     Say 'Checking the copy...'
-                    if ((Get-Sha $file) -eq $h) { $ok = $true; Good "Data partition copied and verified: $file" }
-                    else { Warn 'The copy did not save correctly.' }
+                    if ((Get-Sha $file) -eq $h) { $ok = $true; Good "Copy made and checked: $file" }
+                    else { Warn 'The copy didn''t save correctly.' }
                 } catch { Warn ("The copy failed: " + $_.Exception.Message) }
                 if (-not $ok) { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
             }
             if (-not $ok) {
-                if (-not (Ask-YesNo 'Continue the install without that copy?' $false)) { Say 'Stopped. Nothing was written to the phone.'; return $false }
+                if (-not (Ask-YesNo 'Carry on with the install without that copy?' $false)) { Say 'OK, stopping here. Nothing was written to the phone.'; return $false }
             }
-        } else { Say 'No copy of the Data partition. The stock FFU is your way back.' }
+        } else { Note 'No copy, then. The stock FFU is your way back.' }
     }
     $sums = ''
     foreach ($f in @(Get-ChildItem -LiteralPath $b -File | Sort-Object Name)) { $sums += (Get-Sha $f.FullName) + '  ./' + $f.Name + "`n" }
     [IO.File]::WriteAllText((Join-Path $b 'SHA256SUMS'), $sums, (New-Object Text.ASCIIEncoding))
 
     # ---- the point of no return ----
-    Write-Host ''
-    if ($plan.Layout -eq 'windows') { Warn 'Last question. This ERASES Windows Phone''s apps and data on the phone and installs Android in their place.' }
-    else { Warn 'Last question. This ERASES the Android that is on the phone now and installs it again.' }
-    Say 'Windows Phone will not start afterwards. The way back is flashing the stock FFU with WPinternals.'
-    Say 'It takes roughly 10 to 20 minutes. Do not unplug the phone and do not close this window.'
-    $t = (Read-Host '  Type INSTALL to continue, anything else to cancel').Trim()
-    if ($t -cne 'INSTALL') { Say 'Cancelled. Nothing was written to the phone.'; return $false }
+    if ($plan.Layout -eq 'windows') {
+        Show-Danger @('LAST STOP. After this there is no undo button.', '',
+            'Windows Phone''s apps and data on the phone are ERASED and Android takes', 'their place. Windows Phone will not start afterwards.',
+            'The way back is flashing the stock FFU with WPinternals.')
+    } else {
+        Show-Danger @('LAST STOP. After this there is no undo button.', '',
+            'The Android that is on the phone now is ERASED and installed fresh.')
+    }
+    Say 'It takes 10 to 20 minutes. Keep the phone plugged in and this window open.'
+    if (-not (Ask-Word 'INSTALL' 'cancel')) { Say 'Cancelled. Nothing was written to the phone.'; return $false }
 
-    Say 'Checking the images of this kit...'
+    Write-Host ''
+    Say 'Checking this kit''s images...'
     foreach ($k in $InternalImages.Keys) { Test-KitFile $InternalImages[$k].Gz }
-    Good 'Images are intact.'
+    Good 'Images are fine.'
     $locks = @(Lock-PhoneVolumes $number $plan.OldDataFirst $plan.OldDataLast)
     $out = $null
     try {
@@ -982,14 +1131,14 @@ function Step-WritePhone([int]$number) {
         foreach ($k in $InternalImages.Keys) {
             $i++
             $img = $InternalImages[$k]
-            Say ("{0}/4  Writing {1} ({2})..." -f $i, $img.Name, (Format-Size $img.Bytes))
+            Step "$i/4" ("Writing {0} ({1})..." -f $img.Name, (Format-Size $img.Bytes))
             Write-ImageToPhone $out $img $starts[$k] | Out-Null
-            Say '     checking it...'
+            Note '        reading it back to check...'
             Test-ImageOnPhone $out $img $starts[$k]
-            Good ("{0} written and verified." -f $img.Name)
+            Good ("{0} written and checked." -f $img.Name)
         }
         if ($plan.NewPrimary) {
-            Say '4/4  Writing the new partition table...'
+            Step '4/4' 'Writing the new partition table...'
             # backup copy first, then the primary: an interruption in between leaves a table the phone still reads
             $out.Position = ($total - 33) * 512; $out.Write($plan.NewBackup, 0, $plan.NewBackup.Length)
             $out.Position = 0; $out.Write($plan.NewPrimary, 0, $plan.NewPrimary.Length)
@@ -1000,8 +1149,8 @@ function Step-WritePhone([int]$number) {
             if ($r1 -ne $chkP.Length -or $r2 -ne $chkB.Length -or -not [SupermanGpt]::Equal($chkP, $plan.NewPrimary, $chkP.Length) -or -not [SupermanGpt]::Equal($chkB, $plan.NewBackup, $chkB.Length)) {
                 throw "The new partition table did not read back correctly. Do NOT restart the phone; run this step again. The old table is saved in $b"
             }
-            Good 'Partition table written and verified.'
-        } else { Say '4/4  The partition table is already the Android one; left as it is.' }
+            Good 'Partition table written and checked.'
+        } else { Step '4/4' 'The partition table is already the Android one. Leaving it.' }
     } finally {
         if ($out) { $out.Dispose() }
         try { [SupermanRawDisk]::UpdateDisk("\\.\PhysicalDrive$number") } catch { }
@@ -1013,112 +1162,121 @@ function Step-WritePhone([int]$number) {
 # ------------------------------------------------------------------------------------------------------------
 # Menu 1: Android on the phone itself
 # ------------------------------------------------------------------------------------------------------------
+function Confirm-Unlocked {
+    # Shared opening of both installs: a quick look at the PC, then the one thing that must be true.
+    Show-Screen 'Before we start' 'A quick look at this PC. These are cautions only - nothing here stops you.'
+    try { Do-CheckPc } catch { Warn ('The PC check couldn''t finish (' + $_.Exception.Message + '). That doesn''t stop the install.') }
+    Write-Host ''
+    if (Ask-YesNo 'Is the phone''s bootloader already unlocked with WPinternals?') { return $true }
+    Write-Host ''
+    Say 'Then that comes first. In WPinternals, choose "Unlock bootloader". It asks for three files: your phone''s FFU, its emergency files and a donor FFU. All three are on lumiadb.com, and so is a step-by-step guide (lumiadb.com/guides). Keep the FFU afterwards - it''s also your way back to Windows Phone. Come back here when the phone is unlocked.'
+    return $false
+}
 function Do-InstallPhone {
-    Title 'Install Android on the phone   -   about 30 minutes'
-    Say 'Android is installed on the phone''s own storage. No microSD card is needed.'
-    Say 'Windows Phone is replaced: it will not start afterwards, and its apps and data are erased.'
-    Say 'You can always go back to a factory-fresh Windows Phone with WPinternals and the stock FFU.'
-    Say 'Three parts: (1) prepare the phone, (2) write Android onto it, (3) first start.'
+    $steps = @('Get the phone ready', 'Write Android', 'First start')
+    Show-Screen 'Install Android on the phone' 'About 30 minutes, most of it waiting.'
+    Say 'Android goes onto the phone''s own storage. You don''t need a microSD card.'
     Write-Host ''
-    Say 'You need:'
-    Say '  - a Nokia Lumia 730 (not the 735) with its bootloader unlocked by WPinternals'
-    Say '  - WPinternals on this PC, and the stock FFU of your phone saved somewhere (your way back)'
+    Say 'Windows Phone gets replaced: it won''t start afterwards, and its apps and data are erased. If you change your mind later, flashing the stock FFU with WPinternals brings back a factory-fresh Windows Phone. That route has been tested.'
+    Head 'You need'
+    Item 'a Nokia Lumia 730 (not the 735), bootloader unlocked with WPinternals'
+    Item 'WPinternals on this PC'
+    Item 'the stock FFU of your phone, saved somewhere safe (from lumiadb.com)'
+    Item 'the phone charged above 50 %'
+    Head 'How it goes'
+    Step 1 'Get the phone ready     boot shim and Android bootloader'
+    Step 2 'Write Android           onto the phone, every byte checked'
+    Step 3 'First start             what you''ll see'
     Write-Host ''
-    try { Do-CheckPc } catch { Warn ('The PC check could not finish (' + $_.Exception.Message + '). That does not stop the install.') }
-    Write-Host ''
-    Say 'Back to the install.'
-    if (-not (Ask-YesNo 'Is the bootloader already unlocked with WPinternals?')) {
-        Say 'Do that first: WPinternals -> "Unlock bootloader". It also asks for the FFU; keep that file.'
-        Say 'Then start this tool again.'
-        return
-    }
+    if (-not (Ask-YesNo 'Ready to start?')) { return }
+    if (-not (Confirm-Unlocked)) { return }
 
-    Title 'Part 1 of 3  -  Prepare the phone'
+    Show-Screen 'Get the phone ready' '' $steps 1
     $phone = Step-PreparePhone
     if (-not $phone) { return }
     if ($phone.Disk -lt 0) { throw 'The phone''s disk number could not be worked out from the EFIESP drive letter.' }
     Write-Host ''
-    Good 'The phone is prepared. Keep it connected and in Mass Storage Mode.'
+    Good 'The phone is ready. Leave it plugged in and in Mass Storage Mode.'
+    Pause-Enter 'Press Enter for the next part'
 
-    Title 'Part 2 of 3  -  Write Android onto the phone'
+    Show-Screen 'Write Android onto the phone' '' $steps 2
     if (-not (Step-WritePhone $phone.Disk)) { return }
+    Write-Host ''
+    Good 'Android is on the phone.'
+    Pause-Enter 'Press Enter for the last part'
 
-    Title 'Part 3 of 3  -  First start'
-    Say '1. Make sure there is NO microSD card with Android in the phone (a card would start instead).'
-    Say '2. Restart the phone: hold the Power button for about 10 seconds, until it vibrates.'
-    Say '   If Windows asks to format a disk at any point: choose Cancel.'
-    Say '3. A text menu appears for 5 seconds ("Boot Shim" is selected). Do not press anything.'
-    Say '4. Android starts. The FIRST start takes about 3 minutes: the phone collects its own firmware'
-    Say '   (you see lines "SUPERMAN_FIRMWARE 1/4 ... 4/4") and sets itself up.'
+    Show-Screen 'First start' '' $steps 3
+    Step 1 'Take out any microSD card that has Android on it (it would start instead).'
+    Step 2 'Restart the phone: hold Power for about 10 seconds, until it buzzes. If Windows offers to format a disk at any point, click Cancel.'
+    Step 3 'A small text menu shows for 5 seconds with "Boot Shim" selected. Just wait.'
+    Step 4 'Android starts. The first start takes about 3 minutes: the phone gathers its own firmware (lines like "SUPERMAN_FIRMWARE 1/4 ... 4/4") and sets itself up.'
+    Head 'Good to know'
+    Item 'Later starts are much quicker.'
+    Item 'Screen says "firmware version not supported yet"? Android still starts, but sound, Wi-Fi and the modem stay off. Please report the hashes it shows.'
+    Item 'Phone stops on a "fastboot" screen? Android didn''t start. Run this install again.'
+    Item 'Want Windows Phone back one day? That''s option 3 in the menu.'
     Write-Host ''
-    Say 'Good to know:'
-    Say '  - Later starts are much faster.'
-    Say '  - If the screen says "firmware version not supported yet", Android still starts, but sound,'
-    Say '    Wi-Fi and the modem stay off. Please report the hashes it shows.'
-    Say '  - If the phone stops on a "fastboot" screen instead, Android did not start: run this menu item again.'
-    Say '  - To go back to Windows Phone, see "Go back to Windows Phone" in the menu.'
-    Write-Host ''
-    Good 'That is all. Android is on the phone.'
+    Good 'That''s it. Enjoy Android on your Lumia 730!'
 }
 
 # ------------------------------------------------------------------------------------------------------------
 # Menu 2: Android on a microSD card instead
 # ------------------------------------------------------------------------------------------------------------
 function Do-InstallSd {
-    Title 'Install Android on a microSD card instead   -   optional, about 20 minutes'
-    Say 'Android runs from a microSD card. Windows Phone stays on the phone and can still be started,'
-    Say 'so this is the way to try Android without giving up Windows Phone. Storage is slower and smaller.'
-    Say 'Three parts: (1) prepare the phone, (2) write the SD card, (3) first start.'
+    $steps = @('Get the phone ready', 'Write the SD card', 'First start')
+    Show-Screen 'Try Android from a microSD card' 'Optional. About 20 minutes.'
+    Say 'Android runs from a microSD card and Windows Phone stays on the phone, untouched. It''s the way to have a look at Android without giving anything up. The price: storage is slower and smaller than with the install on the phone itself.'
+    Head 'You need'
+    Item 'a Nokia Lumia 730 (not the 735), bootloader unlocked with WPinternals'
+    Item 'WPinternals on this PC'
+    Item 'the stock FFU of your phone, saved somewhere safe (from lumiadb.com)'
+    Item 'a microSD card of 4 GB or more, and a way to plug it into this PC'
+    Head 'How it goes'
+    Step 1 'Get the phone ready     boot shim and Android bootloader'
+    Step 2 'Write the SD card       every byte checked'
+    Step 3 'First start             what you''ll see'
     Write-Host ''
-    Say 'You need:'
-    Say '  - a Nokia Lumia 730 (not the 735) with its bootloader unlocked by WPinternals'
-    Say '  - WPinternals on this PC, and the stock FFU of your phone saved somewhere (your way back)'
-    Say '  - a microSD card of 4 GB or more, and a way to plug it into this PC'
-    Write-Host ''
-    try { Do-CheckPc } catch { Warn ('The PC check could not finish (' + $_.Exception.Message + '). That does not stop the install.') }
-    Write-Host ''
-    Say 'Back to the install.'
-    if (-not (Ask-YesNo 'Is the bootloader already unlocked with WPinternals?')) {
-        Say 'Do that first: WPinternals -> "Unlock bootloader". It also asks for the FFU; keep that file.'
-        Say 'Then start this tool again.'
-        return
-    }
+    if (-not (Ask-YesNo 'Ready to start?')) { return }
+    if (-not (Confirm-Unlocked)) { return }
 
     # ---- Part 1 ----
-    Title 'Part 1 of 3  -  Prepare the phone'
+    Show-Screen 'Get the phone ready' '' $steps 1
     $phoneDisk = @()
-    if (Ask-YesNo 'Do this part now? (answer N if the phone already shows the "Boot Shim" menu when it starts)') {
+    Note 'Already done this once? If the phone shows the "Boot Shim" menu when it starts, answer N.'
+    if (Ask-YesNo 'Get the phone ready now?') {
+        Write-Host ''
         $phone = Step-PreparePhone
         if (-not $phone) { return }
         if ($phone.Disk -ge 0) { $phoneDisk = @([int]$phone.Disk) }
         Write-Host ''
-        Say 'The phone is prepared. Leave it connected for now; it is restarted in part 3.'
-    } else { Say 'Part 1 skipped.' }
+        Good 'The phone is ready. Leave it plugged in for now; you restart it in the last part.'
+    } else { Say 'Skipping this part.' }
+    Pause-Enter 'Press Enter for the next part'
 
     # ---- Part 2 ----
-    Title 'Part 2 of 3  -  Write the SD card'
+    Show-Screen 'Write the SD card' '' $steps 2
     $written = $false
-    if (Ask-YesNo 'Write the SD card now? (answer N if you already have a card written by this tool)') {
+    Note 'Already have a card written by this tool? Answer N.'
+    if (Ask-YesNo 'Write the SD card now?') {
+        Write-Host ''
         $written = Step-SdCard $phoneDisk
-        if (-not $written) { Say 'The SD card was not written. You can come back to this from the menu.'; return }
-    } else { Say 'Part 2 skipped.' }
+        if (-not $written) { Say 'The SD card wasn''t written. You can come back to this from the menu.'; return }
+    } else { Say 'Skipping this part.' }
+    Pause-Enter 'Press Enter for the last part'
 
     # ---- Part 3 ----
-    Title 'Part 3 of 3  -  First start'
-    Say '1. Put the microSD card into the phone.'
-    Say '2. Restart the phone: hold the Power button for about 10 seconds, until it vibrates.'
-    Say '3. A text menu appears for 5 seconds ("Boot Shim" is selected). Do not press anything.'
-    Say '4. Android starts. The FIRST start takes about 3 minutes: the phone copies its own firmware'
-    Say '   from Windows Phone (you see lines "SUPERMAN_FIRMWARE 1/4 ... 4/4") and sets itself up.'
+    Show-Screen 'First start' '' $steps 3
+    Step 1 'Put the microSD card into the phone.'
+    Step 2 'Restart the phone: hold Power for about 10 seconds, until it buzzes.'
+    Step 3 'A small text menu shows for 5 seconds with "Boot Shim" selected. Just wait.'
+    Step 4 'Android starts. The first start takes about 3 minutes: the phone copies its own firmware from Windows Phone ("SUPERMAN_FIRMWARE 1/4 ... 4/4") and sets itself up.'
+    Head 'Good to know'
+    Item 'Later starts are much quicker.'
+    Item 'Holding Volume Up while the phone starts always starts Android.'
+    Item 'Screen says "firmware version not supported yet"? Android still starts, but sound, Wi-Fi and the modem stay off. Please report the hashes it shows.'
+    Item 'Want Windows Phone to start again? That''s option 3 in the menu.'
     Write-Host ''
-    Say 'Good to know:'
-    Say '  - Later starts are much faster.'
-    Say '  - Holding Volume Up while the phone starts always starts Android.'
-    Say '  - If the screen says "firmware version not supported yet", Android still starts, but sound,'
-    Say '    Wi-Fi and the modem stay off. Please report the hashes it shows.'
-    Say '  - To go back to Windows Phone, see "Go back to Windows Phone" in the menu.'
-    Write-Host ''
-    Good 'That is all for the SD card version.'
+    Good 'That''s it. Enjoy Android on your Lumia 730!'
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1130,9 +1288,9 @@ function Find-Adb {
     if (Test-Path -LiteralPath $local) { return $local }
     $cmd = Get-Command adb.exe -ErrorAction SilentlyContinue
     if ($cmd) { return $cmd.Source }
-    Say 'This part talks to the phone with "adb", Google''s Android debugging tool. It is not on this PC yet.'
-    Say 'The tool can download it from Google (about 7 MB):'
-    Say "    $AdbUrl"
+    Write-Host ''
+    Say 'This part talks to the phone through "adb", Google''s Android debugging tool, and it isn''t on this PC yet. It can be fetched straight from Google (about 7 MB):'
+    Note "  $AdbUrl"
     if (-not (Ask-YesNo 'Download it now?')) { return $null }
     New-Item -ItemType Directory -Path $Tools -Force | Out-Null
     $zip = Join-Path $Tools 'platform-tools.zip'
@@ -1140,7 +1298,7 @@ function Find-Adb {
     Expand-Archive -LiteralPath $zip -DestinationPath $Tools -Force
     Remove-Item -LiteralPath $zip -Force
     if (-not (Test-Path -LiteralPath $local)) { throw 'The download did not contain adb.exe.' }
-    Good 'adb downloaded.'
+    Good 'Got adb.'
     return $local
 }
 function Adb-Run([string[]]$a) {
@@ -1161,13 +1319,11 @@ function Wait-Phone {
     while ($true) {
         $o = Adb-Run @('devices')
         if ($o -match '(?m)^\S+\s+device\s*$') { return $true }
-        if ($o -match 'unauthorized') { Warn 'The phone asks to allow USB debugging. Accept it on the phone screen.' }
+        if ($o -match 'unauthorized') { Warn 'The phone is asking whether to allow USB debugging. Tap Allow on its screen.' }
         else {
-            Warn 'adb does not see the phone.'
-            Say 'Check that Android is running (from the SD card) and the USB cable is plugged in.'
-            Say 'If Windows Device Manager shows "Lumia 730 Android" with a yellow mark, it needs a driver:'
-            Say '  right-click it -> Update driver -> Browse my computer -> Let me pick -> "Android Device" ->'
-            Say '  "Android ADB Interface" (from Google''s USB driver; Windows Update often offers it too).'
+            Warn 'adb can''t see the phone.'
+            Item 'Is Android running (from the SD card), and is the USB cable in?'
+            Item 'Does Device Manager show "Lumia 730 Android" with a yellow mark? Then it needs a driver: right-click it -> Update driver -> Browse my computer -> Let me pick -> "Android Device" -> "Android ADB Interface". That entry comes with Google''s USB driver; Windows Update often offers it too.'
         }
         if (-not (Ask-YesNo 'Try again?')) { return $false }
     }
@@ -1175,19 +1331,19 @@ function Wait-Phone {
 function Backup-DataPartition([string]$folder) {
     # Optional: a full copy of Windows Phone's Data partition. Returns $true when a verified copy was made.
     $dev = Adb-Sh 'for u in /sys/block/mmcblk0/mmcblk0p*/uevent; do grep -qx PARTNAME=Data $u && grep ^DEVNAME= $u; done; true'
-    if ($dev -notmatch '^DEVNAME=(mmcblk0p\d+)$') { Warn 'The Data partition was not found on the phone; no copy was made.'; return $false }
+    if ($dev -notmatch '^DEVNAME=(mmcblk0p\d+)$') { Warn 'Couldn''t find the Data partition on the phone, so no copy was made.'; return $false }
     $dev = $Matches[1]
     $sectors = [long]0
-    if (-not [long]::TryParse((Adb-Sh "blockdev --getsz /dev/block/$dev"), [ref]$sectors) -or $sectors -le 0) { Warn 'The size of the Data partition could not be read; no copy was made.'; return $false }
+    if (-not [long]::TryParse((Adb-Sh "blockdev --getsz /dev/block/$dev"), [ref]$sectors) -or $sectors -le 0) { Warn 'Couldn''t read the size of the Data partition, so no copy was made.'; return $false }
     $bytes = $sectors * 512
     $free = Get-FreeSpace $folder
     if ($free -ge 0 -and $free -lt ($bytes + 200MB)) {
-        Warn ("Not enough free space for the copy: it needs " + (Format-Size $bytes) + ", but only " + (Format-Size $free) + " is free where this tool is.")
-        Say 'No copy was made. You can free some space and start this part again, or continue without it.'
+        Warn ("Not enough room for the copy: it needs " + (Format-Size $bytes) + ", and only " + (Format-Size $free) + " is free next to this tool.")
+        Say 'No copy was made. Free up some space and start this part again, or carry on without it.'
         return $false
     }
     $file = Join-Path $folder 'Data.img'
-    Say ("Copying the Data partition (" + (Format-Size $bytes) + ") to this PC. This takes several minutes...")
+    Say ("Copying the Data partition (" + (Format-Size $bytes) + ") to this PC. Several minutes...")
     # adb's output is read as raw bytes and written straight to the file (text handling would damage it).
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = $script:AdbExe
@@ -1220,40 +1376,36 @@ function Backup-DataPartition([string]$folder) {
     $got = (Get-Item -LiteralPath $file).Length
     if ($p.ExitCode -ne 0 -or $got -ne $bytes) {
         Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
-        Warn ("The copy did not complete ($got of $bytes bytes). It was removed; no copy was made.")
+        Warn ("The copy didn't finish ($got of $bytes bytes), so it was thrown away. No copy was made.")
         return $false
     }
-    Say 'Checking the copy against the phone (a few more minutes)...'
+    Say 'Comparing the copy with the phone. A few more minutes...'
     $phoneHash = (Adb-Sh "sha256sum /dev/block/$dev").Split(' ')[0]
     if ((Get-Sha $file) -ne $phoneHash) {
         Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
-        Warn 'The copy does not match the phone. It was removed; no copy was made.'
+        Warn 'The copy doesn''t match the phone, so it was thrown away. No copy was made.'
         return $false
     }
-    Good "Data partition copied and verified: $file"
+    Good "Copy made and checked: $file"
     return $true
 }
 function Do-InstallInternal {
-    Title 'Advanced: move the Android that runs from the SD card onto the phone (over adb)'
-    Say 'Most people do not need this: menu 1 installs Android on the phone directly.'
-    Say 'This copies the Android you are running from the SD card onto the phone itself, into the space'
-    Say 'of Windows Phone''s Data partition. After that the phone runs Android without the SD card,'
-    Say 'with more room for apps (about 2.7 GB) and faster storage.'
+    Show-Screen 'Advanced: move Android from the SD card onto the phone' 'Over adb. Tested on one phone only.'
+    Say 'Most people don''t need this: option 1 puts Android on the phone directly.'
     Write-Host ''
-    Warn 'Windows Phone will no longer start afterwards. Its apps and data on the phone are erased.'
-    Say 'Firmware, calibration and the boot files are not touched. The way back is flashing the stock FFU'
-    Say 'with WPinternals (see "Go back to Windows Phone"); make sure you have that FFU file.'
-    Say 'This has been tested on one phone only.'
-    Write-Host ''
-    Say 'Before you start:'
-    Say '  - Android is running from the SD card written by this tool, and was started at least once'
-    Say '  - the phone is connected by USB, battery at 40 % or more, on the charger'
+    Say 'This takes the Android you''re running from the SD card and copies it onto the phone itself, into the space of Windows Phone''s Data partition. Afterwards the phone runs Android without the card, with more room for apps (about 2.7 GB) and faster storage.'
+    Show-Danger @('Windows Phone will no longer start afterwards, and its apps and data on the',
+        'phone are erased. Firmware, calibration and the boot files are not touched.',
+        'The way back is the stock FFU with WPinternals - make sure you have it.')
+    Head 'Before you start'
+    Item 'Android is running from the SD card written by this tool (started at least once)'
+    Item 'the phone is plugged in, on the charger, battery at 40 % or more'
     Write-Host ''
     if (-not (Ask-YesNo 'Continue?' $false)) { return }
 
     foreach ($k in @($KitHashes.Keys | Where-Object { $_ -like 'files\internal\*' })) { Test-KitFile $k }
     $script:AdbExe = Find-Adb
-    if (-not $script:AdbExe) { Say 'Without adb this part cannot run.'; return }
+    if (-not $script:AdbExe) { Say 'This part can''t run without adb. Nothing was changed.'; return }
     Adb-Run @('start-server') | Out-Null
     if (-not (Wait-Phone)) { return }
     Adb-Run @('root') | Out-Null
@@ -1261,7 +1413,7 @@ function Do-InstallInternal {
     Adb-Run @('wait-for-device') | Out-Null
     if ((Adb-Sh 'getprop ro.product.device') -ne 'superman' -and (Adb-Sh 'getprop ro.hardware') -ne 'superman') { throw 'The connected phone is not a Lumia 730 running this Android.' }
     if ((Adb-Sh 'id -u') -ne '0') { throw 'adb could not get root rights on the phone.' }
-    Good 'Phone found: Lumia 730 running Android.'
+    Good 'Found your Lumia 730, running Android.'
 
     Say 'Copying the installer to the phone...'
     Adb-Sh "rm -rf $Remote; mkdir -p $Remote" | Out-Null
@@ -1271,7 +1423,7 @@ function Do-InstallInternal {
     }
     Adb-Sh "chmod 755 $Remote/superman-gpt" | Out-Null
 
-    Say 'Checking the phone (nothing is written yet)...'
+    Say 'Checking the phone. Nothing is written yet...'
     if ((Adb-ShLive "sh $Remote/superman-install-internal.sh check") -ne 0) { throw 'The phone did not pass the checks. See the message above.' }
     if ((Adb-ShLive "sh $Remote/superman-install-internal.sh prepare") -ne 0) { throw 'The new partition layout could not be planned. Nothing was written.' }
 
@@ -1285,7 +1437,7 @@ function Do-InstallInternal {
             if ((Get-Sha (Join-Path $b $Matches[2])) -ne $Matches[1]) { throw "The backup copy of $($Matches[2]) is damaged." }
         }
     }
-    Good 'Partition table backed up.'
+    Good 'Backed up the partition table.'
     $efiDev = Adb-Sh 'for u in /sys/block/mmcblk0/mmcblk0p*/uevent; do grep -qx PARTNAME=EFIESP $u && grep ^DEVNAME= $u; done; true'
     if ($efiDev -notmatch '^DEVNAME=(mmcblk0p\d+)$') { throw 'The EFIESP partition was not found on the phone.' }
     $efiDev = $Matches[1]
@@ -1294,37 +1446,33 @@ function Do-InstallInternal {
     Adb-Run @('pull', "$Remote/EFIESP.img", (Join-Path $b 'EFIESP.img')) | Out-Null
     Adb-Sh "rm -f $Remote/EFIESP.img" | Out-Null
     if ((Get-Sha (Join-Path $b 'EFIESP.img')) -ne $phoneHash) { throw 'The backup of the boot partition (EFIESP) does not match the phone.' }
-    Good "Boot partition (EFIESP) backed up. Backups are in $b"
+    Good "Backed up the boot partition too. Backups are in $b"
 
-    Write-Host ''
-    Say 'Optional: keep a full copy of Windows Phone''s Data partition (your Windows Phone apps and files).'
-    Say 'It needs about 5 GB on this PC and several minutes. You do NOT need it for the normal way back'
-    Say '(flashing the stock FFU, which gives a factory-fresh Windows Phone). It is only for putting the'
-    Say 'old Windows Phone data back with the Linux script later, a route that has not been tested.'
-    if (Ask-YesNo 'Make this copy?' $false) {
+    Head 'Optional: keep a copy of your Windows Phone'
+    Say 'This saves Windows Phone''s whole Data partition (your apps, photos, settings) to this PC. It takes about 5 GB and several minutes. With it, option 3 can later put Windows Phone back as it is now. Without it you can still go back, but to a factory-fresh Windows Phone (stock FFU).'
+    Warn 'EXPERIMENTAL: restoring from this copy passed its tests on the PC, but hasn''t been tried on a real phone yet. Don''t count on it as your only way back; keep the stock FFU.'
+    if (Ask-YesNo 'Make that copy?' $false) {
         if (-not (Backup-DataPartition $b)) {
-            if (-not (Ask-YesNo 'Continue the install without that copy?' $false)) { Say 'Stopped. Nothing was written to the phone.'; return }
+            if (-not (Ask-YesNo 'Carry on with the install without that copy?' $false)) { Say 'OK, stopping here. Nothing was written to the phone.'; return }
         }
-    } else { Say 'No copy of the Data partition. The stock FFU is your way back.' }
+    } else { Note 'No copy, then. The stock FFU is your way back.' }
     # Checksums of the backup folder, in the format the Linux script (install-internal.sh restore-windows) reads.
     $sums = ''
     foreach ($f in @(Get-ChildItem -LiteralPath $b -File | Sort-Object Name)) { $sums += (Get-Sha $f.FullName) + '  ./' + $f.Name + "`n" }
     [IO.File]::WriteAllText((Join-Path $b 'SHA256SUMS'), $sums, (New-Object Text.ASCIIEncoding))
 
+    Show-Danger @('LAST STOP. After this there is no undo button.', '',
+        'Windows Phone''s Data partition is ERASED and Android takes its place.')
+    Say 'It takes about 10 minutes. Keep the phone plugged in while it runs.'
+    if (-not (Ask-Word 'INSTALL' 'cancel')) { Say 'Cancelled. Nothing was written.'; return }
     Write-Host ''
-    Warn 'Last question. This ERASES Windows Phone''s Data partition and installs Android in its place.'
-    Say 'It takes about 10 minutes. Do not unplug the phone while it runs.'
-    $t = (Read-Host '  Type INSTALL to continue, anything else to cancel').Trim()
-    if ($t -cne 'INSTALL') { Say 'Cancelled. Nothing was written.'; return }
     $oldHash = Get-Sha (Join-Path $b 'old-primary.bin')
     $rc = Adb-ShLive "sh $Remote/superman-install-internal.sh install $oldHash"
     Adb-Run @('pull', "$Remote/install.log", (Join-Path $b 'install.log')) | Out-Null
     if ($rc -ne 0) { throw "The install stopped with an error. The phone still starts from the SD card. The log is in $b" }
     Write-Host ''
-    Good 'Android is installed on the internal storage.'
-    Say 'Now: switch the phone off, take the SD card OUT, and switch it on again.'
-    Say 'The first start takes about 3 minutes. Keep the SD card: with the card in, the phone starts'
-    Say 'from the card again, which is your rescue system.'
+    Good 'Android now lives on the phone itself.'
+    Say 'Switch the phone off, take the SD card OUT, and switch it back on. The first start takes about 3 minutes. Hang on to that card: with it in, the phone starts from the card again, which makes it a handy rescue system.'
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1366,40 +1514,38 @@ function Set-WindowsDefault([string]$efi) {
     return $true
 }
 function Do-RestoreFromBackup {
-    Title 'Put Windows Phone back from a backup'
-    Say 'This writes back the full copy of Windows Phone''s Data partition and the old partition table that'
-    Say 'this tool saved before it installed Android. Windows Phone then starts as it was, with its apps'
-    Say 'and files. The Android on the phone is erased. The bootloader stays unlocked.'
+    Show-Screen 'Put Windows Phone back as it was   [EXPERIMENTAL]' 'From the copy this tool made before it installed Android.'
+    Say 'This writes your saved Windows Phone data and the old partition table back onto the phone. Windows Phone then starts the way you left it, apps and files included. The Android on the phone is erased. The bootloader stays unlocked.'
     Write-Host ''
+    Warn 'EXPERIMENTAL: this route passed its tests on the PC but hasn''t been tried on a real phone yet. If it lets you down, the fresh install (stock FFU) still works afterwards.'
     $found = @(Get-RestorableBackups)
     if ($found.Count -eq 0) {
-        Warn 'No backup with a copy of the Data partition was found in the backups folder of this tool.'
-        Say 'That copy is the optional step during "Install Android on the phone". Without it, use the'
-        Say 'fresh install (stock FFU) instead.'
+        Write-Host ''
+        Warn 'There''s no backup with a copy of your Windows Phone data in this tool''s backups folder. That copy is the optional step during the install. Without it, the way back is the fresh install with the stock FFU.'
         return
     }
-    Say 'Backups that can be restored:'
+    Head 'Backups you can restore'
     for ($i = 0; $i -lt $found.Count; $i++) {
         $size = (Get-Item -LiteralPath (Join-Path $found[$i].FullName 'Data.img')).Length
-        Say ("  {0}) {1}   (Data copy: {2})" -f ($i + 1), $found[$i].Name, (Format-Size $size))
+        Step ($i + 1) ("{0}   ({1} of Windows Phone data)" -f $found[$i].Name, (Format-Size $size))
     }
     $n = Ask-Choice 'Which one? (number, or Q to go back)' (@(1..$found.Count | ForEach-Object { "$_" }) + @('Q'))
     if ($n -eq 'Q') { return }
     $b = $found[[int]$n - 1].FullName
-    Say 'Checking the backup (this reads the whole copy; a minute or two)...'
+    Write-Host ''
+    Say 'Checking the backup. It reads the whole copy, so give it a minute or two...'
     Test-BackupFolder $b
     Good 'The backup is complete and undamaged.'
 
+    Head 'Now put the phone into Mass Storage Mode'
+    Step 1 'Open WPinternals and plug the phone in.'
+    Step 2 'On the left, click "Mode", then pick "Mass Storage Mode".'
+    Step 3 'If WPinternals keeps waiting for the phone, restart the phone: hold Power for about 10 seconds. WPinternals catches it as it starts and switches it over.'
     Write-Host ''
-    Say 'Now put the phone into Mass Storage Mode:'
-    Say '1. Open WPinternals and connect the phone with the USB cable.'
-    Say '2. In WPinternals choose "Mode" (left side), then "Mass Storage Mode".'
-    Say '3. If WPinternals waits for the phone: restart the phone by holding Power for about 10 seconds.'
-    Say '   WPinternals catches it while it starts and switches it.'
     Warn 'If Windows says "You need to format the disk": click Cancel. Never format.'
-    Pause-Enter 'Press Enter when the phone is in Mass Storage Mode'
+    Pause-Enter 'Press Enter once the phone is in Mass Storage Mode'
     $efi = Select-EfiEsp
-    if (-not $efi) { Say 'Nothing was changed.'; return }
+    if (-not $efi) { Say 'OK, stopping here. Nothing was changed.'; return }
     $number = [int](Get-Partition -DriveLetter $efi.Substring(0, 1)).DiskNumber
 
     Initialize-RawDisk; Initialize-Gpt
@@ -1418,18 +1564,18 @@ function Do-RestoreFromBackup {
     $bytes = (Get-Item -LiteralPath $file).Length
     if (-not $data -or $bytes -ne (($data[1] - $data[0] + 1) * 512)) { throw 'The Data copy in this backup does not have the size of the phone''s Data partition. Nothing was written.' }
 
+    Show-Danger @('LAST STOP. After this there is no undo button.', '',
+        'The Android on the phone is ERASED and Windows Phone is put back.')
+    Say 'It takes 10 to 20 minutes. Keep the phone plugged in and this window open.'
+    if (-not (Ask-Word 'RESTORE' 'cancel')) { Say 'Cancelled. Nothing was written to the phone.'; return }
     Write-Host ''
-    Warn 'Last question. This ERASES the Android on the phone and puts Windows Phone back.'
-    Say 'It takes roughly 10 to 20 minutes. Do not unplug the phone and do not close this window.'
-    $t = (Read-Host '  Type RESTORE to continue, anything else to cancel').Trim()
-    if ($t -cne 'RESTORE') { Say 'Cancelled. Nothing was written to the phone.'; return }
 
     $locks = @(Lock-PhoneVolumes $number $data[0] $data[1])
     $out = $null
     $buf = New-Object byte[] (1MB); $got = New-Object byte[] (1MB)
     try {
         $out = [SupermanRawDisk]::Open("\\.\PhysicalDrive$number", $true)
-        Say ("1/3  Writing the Data partition (" + (Format-Size $bytes) + ")...")
+        Step '1/3' ("Writing your Windows Phone data back (" + (Format-Size $bytes) + ")...")
         foreach ($pass in 'write', 'check') {
             $src = [IO.File]::OpenRead($file)
             $done = [long]0
@@ -1449,10 +1595,10 @@ function Do-RestoreFromBackup {
                     }
                 }
             } finally { $src.Dispose(); Write-Progress -Activity "Data partition: $pass" -Completed }
-            if ($pass -eq 'write') { $out.Flush($true); Say '     checking it...' }
+            if ($pass -eq 'write') { $out.Flush($true); Note '        reading it back to check...' }
         }
-        Good 'Data partition written and verified.'
-        Say '2/3  Writing the Windows Phone partition table...'
+        Good 'Windows Phone data written and checked.'
+        Step '2/3' 'Writing the Windows Phone partition table...'
         $out.Position = ($total - 33) * 512; $out.Write($oldBak, 0, $oldBak.Length)
         $out.Position = 0; $out.Write($oldPri, 0, $oldPri.Length)
         $out.Flush($true)
@@ -1462,65 +1608,72 @@ function Do-RestoreFromBackup {
         if ($r1 -ne $chkP.Length -or $r2 -ne $chkB.Length -or -not [SupermanGpt]::Equal($chkP, $oldPri, $chkP.Length) -or -not [SupermanGpt]::Equal($chkB, $oldBak, $chkB.Length)) {
             throw 'The partition table did not read back correctly. Do NOT restart the phone; run this again.'
         }
-        Good 'Partition table written and verified.'
+        Good 'Partition table written and checked.'
     } finally {
         if ($out) { $out.Dispose() }
         try { [SupermanRawDisk]::UpdateDisk("\\.\PhysicalDrive$number") } catch { }
         foreach ($l in $locks) { try { $l.Dispose() } catch { } }
     }
-    Say '3/3  Making Windows Phone the default in the boot menu...'
+    Step '3/3' 'Making Windows Phone the default in the boot menu...'
     $bcdOk = $false
     try { $bcdOk = Set-WindowsDefault $efi } catch { }
     if ($bcdOk) { Good 'Windows Phone starts by default again.' }
     else {
-        Warn 'The boot menu could not be switched. Windows Phone is restored, but the phone still starts the'
-        Say '       Android bootloader first, which now finds nothing and stops on a "fastboot" screen.'
-        Say '       If that happens, use the fresh install (stock FFU): it always works.'
+        Warn 'Couldn''t switch the boot menu. Windows Phone is restored, but the phone still starts the Android bootloader first, which now finds nothing and stops on a "fastboot" screen. If you see that, use the fresh install (stock FFU): it always works.'
     }
     Write-Host ''
     Good 'Windows Phone is back on the phone.'
-    Say 'Restart the phone: hold Power for about 10 seconds. If Windows asks to format a disk: Cancel.'
-    Say 'The boot shim and the Android bootloader are still installed (harmless); Volume Up at start'
-    Say 'would run them. A fresh install with the stock FFU removes them.'
+    Say 'Restart it: hold Power for about 10 seconds. If Windows offers to format a disk, Cancel.'
+    Write-Host ''
+    Note 'The boot shim and the Android bootloader are still on the phone. They''re harmless; holding Volume Up at start would run them. A fresh install with the stock FFU removes them.'
 }
 function Do-FreshWindows {
-    Title 'Fresh Windows Phone (stock FFU with WPinternals)'
-    Say 'This removes Android completely and gives a factory-fresh Windows Phone. It works in every case and'
-    Say 'has been tested with Android installed on the phone itself.'
+    Show-Screen 'Fresh Windows Phone' 'With the stock FFU and WPinternals. Tested with Android on the phone itself.'
+    Say 'This wipes Android completely and leaves you with a factory-fresh Windows Phone. It works whatever state the phone is in.'
+    Head 'First, the FFU'
+    Say 'You need the stock FFU of your phone. If you no longer have it, get it from lumiadb.com: Lumia 730 Dual SIM (RM-1040), then the FFU for your product code (on the label under the battery, "CODE: 059W..."). Not listed? Any RM-1040 FFU will do.'
+    Note 'The "Download" tab in WPinternals no longer works; Microsoft closed those servers.'
+    Head 'Then'
+    Step 1 'Take the SD card out of the phone, if there is one.'
+    Step 2 'Open WPinternals. On the left choose "Flash" and scroll to "Flash original FFU". Pick your FFU file there and let WPinternals check it.'
+    Step 3 'Plug the phone into the PC.'
+    Step 4 'Restart the phone: hold Power for about 10 seconds, until it buzzes. WPinternals catches it as it starts, and the flash button lights up.'
+    Step 5 'Click "Flash FFU image". You''ll see "Restoring bootloader..." first, then the flash.'
+    Step 6 'Wait for it to finish. The phone restarts into the Windows Phone setup.'
     Write-Host ''
-    Say '  1. Take the SD card out of the phone, if there is one.'
-    Say '  2. Open WPinternals. Choose "Flash" on the left, scroll down to "Flash original FFU"'
-    Say '     and pick the stock FFU file of your phone.'
-    Say '  3. Plug the phone into the PC.'
-    Say '  4. Restart the phone: hold Power for about 10 seconds, until it vibrates.'
-    Say '     WPinternals catches the phone while it starts; the "Flash" button becomes available.'
-    Say '  5. Click "Flash". WPinternals shows "Restoring bootloader..." and then flashes the FFU.'
-    Say '  6. Wait for "Flash successful". The phone restarts into the Windows Phone setup.'
+    Note 'This also removes the boot shim and the bootloader unlock. Your phone''s calibration and addresses are kept. If a red "!" screen shows a key combination, don''t use it.'
     Write-Host ''
-    Say 'This also removes the boot shim and the bootloader unlock. Your phone''s calibration and addresses'
-    Say 'are kept. Never use the key combination shown on a red "!" screen.'
-    Say 'This tool cannot press the buttons in WPinternals for you; the steps above are all there is.'
+    if (Ask-YesNo 'Open lumiadb.com in your browser now?' $false) { Open-Web 'https://lumiadb.com' }
+}
+function Do-SdOnlyWindows {
+    Show-Screen 'Start Windows Phone again' 'For when Android is only on a microSD card.'
+    Say 'Windows Phone never left the phone. Only the boot menu''s default points to Android.'
+    Head 'Switch the default back'
+    Step 1 'In Android, open a root shell: adb shell, then su.'
+    Step 2 'Run:  superman-bootmenu windows'
+    Step 3 'Restart. Windows Phone starts by default from now on.'
+    Head 'And back to Android later'
+    Step 1 'Restart while holding Volume Up.'
+    Step 2 'Run:  superman-bootmenu android'
+    Write-Host ''
+    Note 'Why the detour? The phone''s keys can''t move through the boot menu, so whichever entry is the default is the one that starts.'
 }
 function Do-BackToWindows {
-    Title 'Go back to Windows Phone'
-    Say 'A   Fresh Windows Phone, with the stock FFU and WPinternals   (always works; erases everything)'
-    Say 'B   Put Windows Phone back as it was, from a backup of this tool'
-    Say '    (needs the optional full copy of the Data partition made when Android was installed)'
-    Say 'C   Android is only on a microSD card: how to start Windows Phone again'
-    Say 'Q   Back'
+    Show-Screen 'Go back to Windows Phone' 'Three ways, depending on where you are.'
+    Choice 'A' 'Fresh Windows Phone' 'Stock FFU + WPinternals. Always works. Erases everything on the phone.' 'tested'
     Write-Host ''
-    $c = Ask-Choice 'Your choice' @('A', 'B', 'C', 'Q')
+    Choice 'B' 'Windows Phone as you left it' 'From this tool''s backup. Needs the optional copy made during the install.' 'experimental' 'Yellow'
+    Write-Host ''
+    Choice 'C' 'Android is only on a microSD card' 'Windows Phone is still there; this shows how to start it again.'
+    Write-Host ''
+    Choice 'Q' 'Back to the menu'
+    Write-Host ''
+    $c = Ask-Choice 'Which one?' @('A', 'B', 'C', 'Q')
     switch ($c) {
         'A' { Do-FreshWindows }
         'B' { Do-RestoreFromBackup }
-        'C' {
-            Write-Host ''
-            Say 'Windows Phone is still on the phone; only the boot menu''s default entry points to Android.'
-            Say 'In Android, open a root shell (adb shell, then su) and run:  superman-bootmenu windows'
-            Say 'then restart. Windows Phone starts by default from then on.'
-            Say 'Back to Android: restart while holding Volume Up, then run:  superman-bootmenu android'
-            Say '(The keys cannot move through the boot menu, so the default entry decides what starts.)'
-        }
+        'C' { Do-SdOnlyWindows }
+        'Q' { return $false }
     }
 }
 
@@ -1528,12 +1681,13 @@ function Do-BackToWindows {
 # Menu 4: check the kit
 # ------------------------------------------------------------------------------------------------------------
 function Do-CheckKit {
-    Title 'Check the files of this kit'
+    Show-Screen 'Check this kit''s files' 'Makes sure nothing is missing or got damaged on the way to you.'
     $bad = 0
     foreach ($k in $KitHashes.Keys) {
-        try { Test-KitFile $k; Good $k } catch { Bad $k; Say ("      " + $_.Exception.Message.Split("`n")[0]); $bad++ }
+        try { Test-KitFile $k; Good $k } catch { Bad $k; More $_.Exception.Message.Split("`n")[0]; $bad++ }
     }
-    if ($bad -eq 0) { Good 'All files are complete and unchanged.' } else { Bad "$bad file(s) are missing or damaged. Download the kit again." }
+    Write-Host ''
+    if ($bad -eq 0) { Good 'All there, all intact.' } else { Bad "$bad file(s) are missing or damaged. Please download the kit again." }
 }
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1543,35 +1697,56 @@ New-Item -ItemType Directory -Path $Logs -Force | Out-Null
 $log = Join-Path $Logs ('setup-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
 try { Start-Transcript -Path $log | Out-Null } catch { }
 try { $Host.UI.RawUI.WindowTitle = 'Lumia 730 Android setup' } catch { }
+try {
+    # The screens are 86 columns wide; make sure the window is not narrower than that.
+    $raw = $Host.UI.RawUI
+    if ($raw.WindowSize.Width -lt 90) {
+        $buf = $raw.BufferSize; if ($buf.Width -lt 100) { $buf.Width = 100; $raw.BufferSize = $buf }
+        $win = $raw.WindowSize; $win.Width = 100; $raw.WindowSize = $win
+    }
+} catch { }
 
 while ($true) {
-    Title 'Android 11 for the Nokia Lumia 730  -  setup (alpha)'
-    Say '1   Install Android on the phone                 (start here)'
-    Say '2   Install Android on a microSD card instead    (optional; keeps Windows Phone)'
-    Say '3   Go back to Windows Phone'
-    Say '4   Check the files of this kit'
-    Say '5   Is this PC ready? (drivers, WPinternals, FFU, ...)'
-    Say '6   Advanced: move an SD-card Android onto the phone over adb'
-    Say 'Q   Quit'
+    Show-Screen 'What would you like to do?'
+    Choice '1' 'Install Android on the phone' 'Replaces Windows Phone. No microSD card needed.' 'start here'
+    Choice '2' 'Try Android from a microSD card' 'Optional. Windows Phone stays on the phone.'
+    Choice '3' 'Go back to Windows Phone' 'Fresh from the stock FFU, or as you left it from a backup (experimental).'
     Write-Host ''
-    $c = Ask-Choice 'Your choice' @('1', '2', '3', '4', '5', '6', 'Q')
+    Note '  Help and checks'
+    Choice '4' 'What do I need, and where do I get it?' 'WPinternals, drivers, the FFU.'
+    Choice '5' 'Is this PC ready?' 'Looks for drivers, WPinternals and your FFU. Cautions only.'
+    Choice '6' 'Check this kit''s files'
+    Write-Host ''
+    Note '  For tinkerers'
+    Choice '7' 'Move Android from the SD card onto the phone' 'Over adb. Option 1 is the easier way.'
+    Write-Host ''
+    Choice 'Q' 'Quit'
+    Write-Host ''
+    $c = Ask-Choice 'Your choice' @('1', '2', '3', '4', '5', '6', '7', 'Q')
     if ($c -eq 'Q') { break }
+    $stay = $true
     try {
         switch ($c) {
             '1' { Do-InstallPhone }
             '2' { Do-InstallSd }
-            '3' { Do-BackToWindows }
-            '4' { Do-CheckKit }
-            '5' { Do-CheckPc }
-            '6' { Do-InstallInternal }
+            '3' { if ((Do-BackToWindows) -eq $false) { $stay = $false } }
+            '4' { Do-WhatYouNeed }
+            '5' { Show-Screen 'Is this PC ready?' 'Cautions only - nothing here stops you.'; Do-CheckPc }
+            '6' { Do-CheckKit }
+            '7' { Do-InstallInternal }
         }
     } catch {
         Write-Host ''
-        Bad 'This step stopped:'
-        foreach ($l in ("$($_.Exception.Message)" -split "`n")) { Say "      $l" }
-        Say "The full log of this run is in: $log"
+        Bad 'That didn''t work. Here''s what happened:'
+        foreach ($l in ("$($_.Exception.Message)" -split "`n")) { More $l }
+        Write-Host ''
+        Note "The full log of this run is in: $log"
     }
-    Write-Host ''
-    Pause-Enter 'Press Enter to return to the menu'
+    if ($stay) { Pause-Enter 'Press Enter to go back to the menu' }
 }
+Clear-Screen
+Write-Host ''
+Write-Host '  Bye! The log of this run is in:' -ForegroundColor Cyan
+Write-Host "  $log" -ForegroundColor DarkGray
+Write-Host ''
 try { Stop-Transcript | Out-Null } catch { }

@@ -55,12 +55,13 @@ function Invoke-ChildScript([string]$file, [string[]]$scriptArgs) {
     else { Copy-Item (Join-Path $BootDir 'payload/emmc_appsboot.mbn') "$T/efi/" }
     return 0 }
 
-# unlocked? y | part1 y | (Enter) | confirm phone y | download LQS y | part2 y | (Enter) | disk 7 | ERASE
-Queue-Answers 'y' 'y' '' 'y' 'y' 'y' '' '7' 'ERASE'
+# ready y | unlocked y | part1 y | (Enter: mass storage) | confirm phone y | download LQS y | (Enter: next part) |
+# part2 y | (Enter: card is in) | disk 7 | ERASE | (Enter: last part)
+Queue-Answers 'y' 'y' 'y' '' 'y' 'y' '' 'y' '' '7' 'ERASE' ''
 Do-InstallSd
 "--- answers left: $($script:Answers.Count)"
 "--- card first $ImageBytes bytes sha256:"
 $s = [IO.File]::OpenRead("$T/card.img"); $sha = [Security.Cryptography.SHA256]::Create(); $buf = New-Object byte[] (1MB); $left = $ImageBytes
-while ($left -gt 0) { $n = $s.Read($buf, 0, [Math]::Min($buf.Length, $left)); [void]$sha.TransformBlock($buf, 0, $n, $null, 0); $left -= $n }
+while ($left -gt 0) { $n = $s.Read($buf, 0, [int][Math]::Min([long]$buf.Length, [long]$left)); [void]$sha.TransformBlock($buf, 0, $n, $null, 0); $left -= $n }
 [void]$sha.TransformFinalBlock($buf, 0, 0); $s.Dispose(); ([BitConverter]::ToString($sha.Hash)).Replace('-', '').ToLower()
 "--- efi + tools + backups"; Get-ChildItem "$T/efi" -Name; Get-ChildItem "$T/kit/tools" -Name; Get-ChildItem "$T/kit/backups" -Recurse -Name

@@ -15,5 +15,7 @@ foreach ($hxSt in $ast.EndBlock.Statements) {
 }
 . ([scriptblock]::Create($code.ToString()))
 $script:Answers = New-Object System.Collections.Queue
-function Read-Host { param($p) if ($script:Answers.Count -eq 0) { throw "TEST: no answer queued for: $p" }; $a = $script:Answers.Dequeue(); Write-Host "$p > $a" -ForegroundColor Magenta; return $a }
+# Keyboard input comes from a queue; a cleared screen shows up as a marker line.
+function Read-Raw { if ($script:Answers.Count -eq 0) { throw "TEST: no answer queued" }; $a = $script:Answers.Dequeue(); Write-Host "<< $a" -ForegroundColor Magenta; return $a }
+function Clear-Screen { Write-Host ''; Write-Host '=================== (screen cleared) ===================' -ForegroundColor Magenta }
 function Queue-Answers { foreach ($a in $args) { $script:Answers.Enqueue($a) } }
