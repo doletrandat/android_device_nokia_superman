@@ -1,0 +1,249 @@
+diff -ruN a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_28nm.c b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_28nm.c
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_28nm.c	2026-11-04 09:10:08.624299569 +0700
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_28nm.c	2026-11-04 09:21:06.064824854 +0700
+@@ -6,6 +6,7 @@
+ #include <dt-bindings/clock/qcom,dsi-phy-28nm.h>
+ #include <linux/clk.h>
+ #include <linux/clk-provider.h>
++#include <linux/of.h>
+ 
+ #include "dsi_phy.h"
+ #include "dsi.xml.h"
+@@ -390,6 +391,8 @@
+ 	return ret;
+ }
+ 
++static bool superman_phy_quirk(void);
++
+ static int dsi_pll_28nm_vco_prepare_8226(struct clk_hw *hw)
+ {
+ 	struct dsi_pll_28nm *pll_28nm = to_pll_28nm(hw);
+@@ -456,10 +459,21 @@
+ 		udelay(600);
+ 	}
+ 
+-	if (unlikely(!locked))
++	if (unlikely(!locked)) {
+ 		DRM_DEV_ERROR(dev, "DSI PLL lock failed\n");
+-	else
++	} else {
+ 		DBG("DSI PLL Lock success");
++		/*
++		 * Lumia 730: the UEFI loop filter and PLL LDO. With the generic
++		 * values the HS bit clock is too jittery for the Burton panel
++		 * (noise, DSI FIFO underflow); applied after lock as tested.
++		 */
++		if (superman_phy_quirk()) {
++			writel(0x02, base + REG_DSI_28nm_PHY_PLL_VREG_CFG);
++			writel(0x71, base + REG_DSI_28nm_PHY_PLL_VCOLPF_CFG);
++			writel(val | 0x10, base + REG_DSI_28nm_PHY_PLL_GLB_CFG);
++		}
++	}
+ 
+ 	return locked ? 0 : -EINVAL;
+ }
+@@ -782,6 +796,58 @@
+ 		writel(0x0d, phy->base + REG_DSI_28nm_PHY_LDO_CNTRL);
+ }
+ 
++/*
++ * Lumia 730 (Burton AMOLED): the UEFI DisplayDxe PHY state, captured from the
++ * running firmware display (CC5). The panel only receives clean HS video with
++ * the LDO-mode regulator and these lane/timing values; the generic 8226 setup
++ * (DC-DC regulator, 8974 lane strength, computed timings) gives a noisy link.
++ * Offsets are relative to the PHY (0x...b00) and regulator (0x...d80) blocks.
++ */
++struct superman_phy_reg {
++	u16 offset;
++	u8 value;
++};
++
++static const struct superman_phy_reg superman_regulator[] = {
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_0, 0x00 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CAL_PWR_CFG, 0x00 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_5, 0x07 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_3, 0x00 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_2, 0x04 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_1, 0x06 },
++	{ REG_DSI_28nm_PHY_REGULATOR_CTRL_4, 0x00 },
++};
++
++static const struct superman_phy_reg superman_phy[] = {
++	/* Data lanes 0-3: CFG_0, CFG_1 and the 8226 strength 0x75. */
++	{ 0x000, 0x05 }, { 0x004, 0xc2 }, { 0x020, 0x75 }, { 0x030, 0x75 },
++	{ 0x040, 0x05 }, { 0x044, 0xc2 }, { 0x060, 0x75 }, { 0x070, 0x75 },
++	{ 0x080, 0x05 }, { 0x084, 0xc2 }, { 0x0a0, 0x75 }, { 0x0b0, 0x75 },
++	{ 0x0c0, 0x05 }, { 0x0c4, 0xc2 }, { 0x0e0, 0x75 }, { 0x0f0, 0x75 },
++	/* Clock lane. */
++	{ 0x104, 0xc2 }, { 0x120, 0x97 }, { 0x130, 0x97 },
++	/* TIMING_CTRL_0..11. */
++	{ 0x140, 0x5e }, { 0x144, 0x1f }, { 0x148, 0x18 }, { 0x14c, 0x00 },
++	{ 0x150, 0x30 }, { 0x154, 0x2e }, { 0x158, 0x1c }, { 0x15c, 0x21 },
++	{ 0x160, 0x12 }, { 0x164, 0x03 }, { 0x168, 0x04 }, { 0x16c, 0xa0 },
++	/* BIST_CTRL_2, LDO_CNTRL (LDO mode), then CTRL_0 last. */
++	{ 0x1bc, 0x01 }, { 0x1dc, 0x05 }, { 0x170, 0x7f },
++};
++
++static bool superman_phy_quirk(void)
++{
++	return of_machine_is_compatible("nokia,superman");
++}
++
++static void superman_phy_write(void __iomem *base,
++			       const struct superman_phy_reg *regs, int n)
++{
++	int i;
++
++	for (i = 0; i < n; i++)
++		writel(regs[i].value, base + regs[i].offset);
++}
++
+ static void dsi_28nm_phy_regulator_ctrl(struct msm_dsi_phy *phy, bool enable)
+ {
+ 	if (!enable) {
+@@ -789,7 +855,10 @@
+ 		return;
+ 	}
+ 
+-	if (phy->regulator_ldo_mode)
++	if (superman_phy_quirk())
++		superman_phy_write(phy->reg_base, superman_regulator,
++				   ARRAY_SIZE(superman_regulator));
++	else if (phy->regulator_ldo_mode)
+ 		dsi_28nm_phy_regulator_enable_ldo(phy);
+ 	else
+ 		dsi_28nm_phy_regulator_enable_dcdc(phy);
+@@ -849,6 +918,14 @@
+ 		val |= DSI_28nm_PHY_GLBL_TEST_CTRL_BITCLK_HS_SEL;
+ 	writel(val, base + REG_DSI_28nm_PHY_GLBL_TEST_CTRL);
+ 
++	if (superman_phy_quirk()) {
++		superman_phy_write(base, superman_phy, ARRAY_SIZE(superman_phy));
++		/* UEFI DSI CLKOUT_TIMING_CTRL 0x2029: T_CLK_PRE 0x29, T_CLK_POST 0x20. */
++		timing->shared_timings.clk_pre = 0x29;
++		timing->shared_timings.clk_post = 0x20;
++		timing->shared_timings.clk_pre_inc_by_2 = false;
++	}
++
+ 	return 0;
+ }
+ 
+diff -ruN a/drivers/gpu/drm/msm/msm_drv.c b/drivers/gpu/drm/msm/msm_drv.c
+--- a/drivers/gpu/drm/msm/msm_drv.c	2026-11-04 00:13:48.041725313 +0700
++++ b/drivers/gpu/drm/msm/msm_drv.c	2026-11-04 00:14:06.562047811 +0700
+@@ -113,25 +113,40 @@
+ 	return 0;
+ }
+ 
++/* Legacy platform decision used before component/GPU initialization.
++ * GPU translation must not suppress reservation of physical scanout memory.
++ * Keep the historical A2xx exception; this candidate targets MSM8226/A3xx.
++ */
++bool msm_use_platform_mmu(struct drm_device *dev)
++{
++	struct msm_drm_private *priv = dev->dev_private;
++
++	return priv->is_a2xx || device_iommu_mapped(dev->dev) ||
++		device_iommu_mapped(dev->dev->parent);
++}
++
+ bool msm_use_mmu(struct drm_device *dev)
+ {
+ 	struct msm_drm_private *priv = dev->dev_private;
+ 
+-	/*
+-	 * a2xx comes with its own MMU
+-	 * On other platforms IOMMU can be declared specified either for the
+-	 * MDP/DPU device or for its parent, MDSS device.
++	/* GPU MMU eligibility is independent of render-only versus KMS owner.
++	 * This does not supply an address space to the display engine.
++	 */
++	return (priv->gpu && priv->gpu->aspace && priv->gpu->aspace->mmu) ||
++		msm_use_platform_mmu(dev);
++}
++
++bool msm_gem_use_vram(struct drm_device *dev, uint32_t flags)
++{
++	struct msm_drm_private *priv = dev->dev_private;
++
++	if (!msm_use_mmu(dev))
++		return true;
++	/* Never silently substitute scattered pages for physical scanout.
++	 * A missing pool remains an allocation failure in msm_gem_new().
+ 	 */
+-	/* Render-only DRM registers a synthetic parent without an IOMMU.
+-     * Once the GPU is loaded, its actual address-space determines whether
+-     * page-backed GEM and external PRIME imports can be used. Do not force
+-     * them into the fallback VRAM pool merely because KMS is absent.
+-     * Before GPU initialization, retain the existing carveout fallback.
+-     */
+-    return (msm_render_only && priv->gpu && priv->gpu->aspace &&
+-            priv->gpu->aspace->mmu) || priv->is_a2xx ||
+-        device_iommu_mapped(dev->dev) ||
+-        device_iommu_mapped(dev->dev->parent);
++	return (flags & (MSM_BO_STOLEN | MSM_BO_SCANOUT)) &&
++		(priv->vram.size || !msm_use_platform_mmu(dev));
+ }
+ 
+ static int msm_init_vram(struct drm_device *dev)
+@@ -172,7 +187,7 @@
+ 		 * Grab the entire DMA chunk carved out in early startup in
+ 		 * mach-msm:
+ 		 */
+-	} else if (!msm_use_mmu(dev)) {
++	} else if (!msm_use_platform_mmu(dev)) {
+ 		DRM_INFO("using %s VRAM carveout\n", vram);
+ 		size = memparse(vram, NULL);
+ 	}
+diff -ruN a/drivers/gpu/drm/msm/msm_drv.h b/drivers/gpu/drm/msm/msm_drv.h
+--- a/drivers/gpu/drm/msm/msm_drv.h	2026-11-04 00:13:48.044725320 +0700
++++ b/drivers/gpu/drm/msm/msm_drv.h	2026-11-04 00:14:06.562240371 +0700
+@@ -268,7 +268,9 @@
+ void msm_unregister_mmu(struct drm_device *dev, struct msm_mmu *mmu);
+ 
+ struct msm_gem_address_space *msm_kms_init_aspace(struct drm_device *dev);
++bool msm_use_platform_mmu(struct drm_device *dev);
+ bool msm_use_mmu(struct drm_device *dev);
++bool msm_gem_use_vram(struct drm_device *dev, uint32_t flags);
+ 
+ int msm_ioctl_gem_submit(struct drm_device *dev, void *data,
+ 		struct drm_file *file);
+diff -ruN a/drivers/gpu/drm/msm/msm_fb.c b/drivers/gpu/drm/msm/msm_fb.c
+--- a/drivers/gpu/drm/msm/msm_fb.c	2026-11-04 00:13:48.048377356 +0700
++++ b/drivers/gpu/drm/msm/msm_fb.c	2026-11-04 00:14:06.570604451 +0700
+@@ -210,6 +210,13 @@
+ 		unsigned int height = mode_cmd->height / (i ? info->vsub : 1);
+ 		unsigned int min_size;
+ 
++		/* Without a display MMU the MDP can only scan out contiguous VRAM. */
++		if (!kms->aspace && !to_msm_bo(bos[i])->vram_node) {
++			DRM_DEV_DEBUG(dev->dev, "plane %d is not physically contiguous\n", i);
++			ret = -EINVAL;
++			goto fail;
++		}
++
+ 		min_size = (height - 1) * mode_cmd->pitches[i]
+ 			 + width * info->cpp[i]
+ 			 + mode_cmd->offsets[i];
+diff -ruN a/drivers/gpu/drm/msm/msm_gem.c b/drivers/gpu/drm/msm/msm_gem.c
+--- a/drivers/gpu/drm/msm/msm_gem.c	2026-11-04 00:13:48.046725325 +0700
++++ b/drivers/gpu/drm/msm/msm_gem.c	2026-11-04 00:14:06.562377296 +0700
+@@ -1232,14 +1232,11 @@
+ 
+ 	size = PAGE_ALIGN(size);
+ 
+-	if (!msm_use_mmu(dev))
+-		use_vram = true;
+-	else if ((flags & (MSM_BO_STOLEN | MSM_BO_SCANOUT)) && priv->vram.size)
+-		use_vram = true;
++	use_vram = msm_gem_use_vram(dev, flags);
+ 
+-    /* Existing diagnostic budget limits these events; no new global tracing. */
+-    if (msm_render_only && priv->gpu)
+-        msm_gpu_diag(priv->gpu, use_vram ? "gem_vram" : "gem_shmem", 0, size);
++	/* Existing diagnostic budget limits these events; no new global tracing. */
++	if (msm_render_only && priv->gpu)
++		msm_gpu_diag(priv->gpu, use_vram ? "gem_vram" : "gem_shmem", 0, size);
+ 
+ 	if (GEM_WARN_ON(use_vram && !priv->vram.size))
+ 		return ERR_PTR(-EINVAL);

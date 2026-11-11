@@ -1,0 +1,60 @@
+--- /home/doletrandat/.cache/superman-cc8-gpu-20261104/drmdisplaycompositor.cpp.orig	2026-11-04 10:46:07.990799809 +0700
++++ external/drm_hwcomposer/compositor/drmdisplaycompositor.cpp	2026-11-04 10:46:19.950134656 +0700
+@@ -230,6 +230,9 @@
+   return 0;
+ }
+ 
++// A flip completes within one 16.6 ms frame; allow for a slow first frame.
++static const int kWaitPreviousFlipMs = 100;
++
+ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
+                                       bool test_only,
+                                       DrmConnector *writeback_conn,
+@@ -486,10 +489,27 @@
+     }
+   }
+ 
++  // Superman: a blocking commit holds SurfaceFlinger until the in-fences
++  // signal and the flip lands, so a 17 ms GPU frame becomes a 33 ms display
++  // frame. Commit page flips non-blocking and only wait for the previous
++  // flip, which the kernel would otherwise reject with -EBUSY. Modesets stay
++  // blocking. The out fence still signals at the flip, so present and release
++  // fences keep their meaning.
++  bool nonblock = !test_only && !mode_.needs_modeset && writeback_buffer == NULL &&
++                  crtc->out_fence_ptr_property().id() != 0;
++  if (!ret && !test_only && last_commit_fence_.get() >= 0) {
++    ATRACE_NAME("wait previous flip");
++    if (sync_wait(last_commit_fence_.get(), kWaitPreviousFlipMs) < 0)
++      ALOGE("Previous flip did not signal in %d ms", kWaitPreviousFlipMs);
++    last_commit_fence_.Set(-1);
++  }
++
+   if (!ret) {
+     uint32_t flags = DRM_MODE_ATOMIC_ALLOW_MODESET;
+     if (test_only)
+       flags |= DRM_MODE_ATOMIC_TEST_ONLY;
++    else if (nonblock)
++      flags |= DRM_MODE_ATOMIC_NONBLOCK;
+ 
+     ret = drmModeAtomicCommit(drm->fd(), pset, flags, drm);
+     if (ret) {
+@@ -525,6 +545,8 @@
+ 
+   if (crtc->out_fence_ptr_property().id()) {
+     display_comp->set_out_fence((int)out_fences[crtc->pipe()]);
++    if (nonblock)
++      last_commit_fence_.Set(dup((int)out_fences[crtc->pipe()]));
+   }
+ 
+   return ret;
+--- /home/doletrandat/.cache/superman-cc8-gpu-20261104/drmdisplaycompositor.h.orig	2026-11-04 10:46:07.991925775 +0700
++++ external/drm_hwcomposer/include/drmdisplaycompositor.h	2026-11-04 10:46:19.949963476 +0700
+@@ -105,6 +105,8 @@
+   int display_;
+ 
+   std::unique_ptr<DrmDisplayComposition> active_composition_;
++  // Out fence of the last non-blocking commit; the next one waits on it.
++  UniqueFd last_commit_fence_;
+ 
+   bool initialized_;
+   bool active_;

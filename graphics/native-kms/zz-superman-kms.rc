@@ -1,0 +1,18 @@
+# CC10 native display: after the contract-selected kms phase passes at post-fs,
+# start gralloc/drm_hwcomposer/SF at boot and release the framework classes.
+on property:vendor.superman.native_sf_boot_ready=1 && property:vendor.superman.native_result=kms-pass
+    start superman-native-kms-ui
+
+service superman-native-kms-ui /system/bin/sh /vendor/bin/superman-native-startup.sh --kms-ui
+    class p35_hold
+    disabled
+    oneshot
+    user root
+    seclabel u:r:init:s0
+    group root graphics drmrpc readproc
+    stdio_to_kmsg
+
+on property:vendor.superman.native_kms_release=1 && property:vendor.superman.native_result=kms-pass
+    class_start main
+    class_start late_start
+    start zygote
