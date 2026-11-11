@@ -1,0 +1,30 @@
+// MediaCodec end-to-end test: decodes a file through the platform codec stack
+// (CCodec/Codec2 or OMX), as an app would, and reports frames, hashes and speed.
+cc_binary {
+    name: "superman-codec-test",
+    srcs: ["codec_test.cpp"],
+    shared_libs: ["libmediandk", "liblog"],
+    cflags: ["-Wall", "-Werror"],
+    compile_multilib: "32",
+}
+
+// MediaCodec encode test: encodes a deterministic moving pattern through a named encoder
+// (ByteBuffer input), writes the H.264 stream; the host regenerates the pattern for PSNR.
+cc_binary {
+    name: "superman-encode-test",
+    srcs: ["encode_test.cpp"],
+    shared_libs: ["libmediandk", "liblog"],
+    cflags: ["-Wall", "-Werror"],
+    compile_multilib: "32",
+}
+
+// Prototype: RGBA -> NV12 (Venus layout) on the GPU with GLES2, compared with libyuv.
+cc_binary {
+    name: "superman-gpu-convert-test",
+    srcs: ["gpu_convert_test.cpp"],
+    shared_libs: ["libEGL", "libGLESv2", "libnativewindow", "libcutils", "liblog"],
+    static_libs: ["libyuv_static"],
+    header_libs: ["libnativebase_headers"],
+    cflags: ["-Wall", "-Werror", "-Wno-unused-parameter"],
+    compile_multilib: "32",
+}
