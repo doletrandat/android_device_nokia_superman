@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+// Torch-only camera HAL module for the Lumia 730; loaded by the legacy
+// camera provider as camera.<ro.hardware> = camera.superman.
+cc_library_shared {
+    name: "camera.superman",
+    relative_install_path: "hw",
+    vendor: true,
+    srcs: ["camera_torch.cpp"],
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "libcamera_metadata",
+        "liblog",
+    ],
+    cflags: ["-Wall", "-Werror"],
+}
