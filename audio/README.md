@@ -27,6 +27,14 @@ Source and prebuilt PCM, loader, mono input policy and audio feature XML match t
 installed selection. Carrier call audio, charging and other phone bringup remain
 unfinished; no eMMC, NV, kernel, ramdisk, DT or graphics changes are part of this step.
 
+CC26: WCD9302 VDD_DIG is PM8226 L4, which is otherwise voted only by the DSI vdda. Panel sleep
+turned it off and left the codec NACKing all SLIM reads until reboot. superman_wcd9302_reset now
+holds L4 (exact RPM provider via the DSI vdda-supply phandle) from before reset release until unload.
+
+CC26b: after a failed PCM open or hard write error the HAL discards audio in real time and retries
+after 250 ms, doubling to 4 s, so a broken path no longer power-cycles the board on every write or
+stalls A/V sync. Build with pf31/hal/build-cc26.sh (PF31 recipe).
+
 The HAL prebuffers six 10ms playback periods within its 80ms ring. CORE startup
 waits at most 15 seconds for the existing WCNSS attempt to finish before starting
 ADSP. It never retries radio startup; --check exits before the wait. Cold05 proved

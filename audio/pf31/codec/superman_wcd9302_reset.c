@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Lumia 730 stock AUDD GPNF role0/resource0 is TLMM72, active low.
  * Live E0 endpoints and chip major 0x0103/minor 0x0001 appear after release.
- * This provides codec reset only; it does not register a PCM or audio route. */
+ * This provides codec reset only; it does not register a PCM or audio route.
+ * CC26: RM-1040 WCD9302 VDD_DIG (pin 19) is PM8226 L4 1.2V, shared with the
+ * MIPI DSI vdda. Only the DSI driver voted for it, so every panel sleep cut
+ * the codec digital core: the codec then NACKed all SLIM value reads until
+ * reboot. Hold our own L4 vote from before reset release until unload. */
 #include <linux/module.h>
 #include "superman-codec.h"
 #include <linux/platform_device.h>
@@ -10,6 +14,7 @@
 #include <linux/of.h>
 #include <linux/io.h>
 #include <linux/delay.h>
+#include <linux/regulator/consumer.h>
 
 #define NAME "superman-wcd9302-reset"
 struct codec_reset {
@@ -18,6 +23,52 @@ struct codec_reset {
 };
 static bool ready;
 static struct platform_device *codec_device;
+static unsigned vdig_uv;
+module_param(vdig_uv,uint,0444);
+#define DSI_NAME "fd922800.dsi"
+
+static void release_vdig(void *data)
+{
+ struct regulator *vdig = data;
+ regulator_disable(vdig);
+ regulator_put(vdig);
+ vdig_uv = 0;
+ pr_info(NAME ": released WCD9302 VDD_DIG (L4) vote\n");
+}
+
+/* The exact RPM L4 provider is the DSI node's vdda-supply phandle. */
+static int hold_vdig(struct device *dev)
+{
+ struct device *dsi = bus_find_device_by_name(&platform_bus_type, NULL, DSI_NAME);
+ struct regulator *vdig;
+ int ret, uv;
+ if (!dsi) {
+  /* Non-KMS fallback boots have no DSI device; L4 then stays as firmware left it. */
+  dev_warn(dev, DSI_NAME " absent: VDD_DIG (L4) not held\n");
+  return 0;
+ }
+ vdig = regulator_get_optional(dsi, "vdda");
+ put_device(dsi);
+ if (IS_ERR(vdig))
+  return dev_err_probe(dev, PTR_ERR(vdig), "VDD_DIG (L4) unavailable\n");
+ uv = regulator_get_voltage(vdig);
+ if (uv != 1200000) {
+  regulator_put(vdig);
+  return dev_err_probe(dev, -EINVAL, "VDD_DIG voltage %d, expected 1200000\n", uv);
+ }
+ ret = regulator_enable(vdig);
+ if (ret) {
+  regulator_put(vdig);
+  return dev_err_probe(dev, ret, "VDD_DIG enable failed\n");
+ }
+ ret = devm_add_action_or_reset(dev, release_vdig, vdig);
+ if (ret)
+  return ret;
+ vdig_uv = uv;
+ /* Supply up (it may have been off) before the reset pulse. */
+ usleep_range(5000, 6000);
+ return 0;
+}
 GPIO_LOOKUP_SINGLE(reset_lookup, NAME, "fd510000.pinctrl", 72, "reset", GPIO_ACTIVE_LOW);
 
 static void restore_reset(void *data)
@@ -48,6 +99,9 @@ static int codec_probe(struct platform_device *pdev)
  /* Refuse to take over a pin already configured by another bring-up path. */
  if (readl(r->pin) != 1 || (readl(r->pin + 4) & 2))
   return dev_err_probe(dev, -EBUSY, "unexpected initial TLMM72 state\n");
+ ret = hold_vdig(dev);
+ if (ret)
+  return ret;
  r->gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
  if (IS_ERR(r->gpio))
   return dev_err_probe(dev, PTR_ERR(r->gpio), "reset GPIO unavailable\n");
@@ -60,7 +114,7 @@ static int codec_probe(struct platform_device *pdev)
  if ((readl(r->pin) & 0x21c) != 0x200 || !(readl(r->pin + 4) & 2))
   return dev_err_probe(dev, -EIO, "reset did not deassert\n");
  ready = true;
- dev_info(dev, "TLMM72 codec reset released; no codec gain/route writes\n");
+ dev_info(dev, "TLMM72 codec reset released, VDD_DIG L4 %uuV held; no codec gain/route writes\n", vdig_uv);
  return 0;
 }
 

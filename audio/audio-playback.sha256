@@ -1,5 +1,5 @@
 b458262d4520f81862e00aa8266bc288715536d9ae128bcdd2c6791232452b99  vendor/lib/modules/audio-pf31/slimbus.ko
-fa87268938f6006aa3a23d2fe3fb1c956cc164f94cafabcabf398733e664a9fb  vendor/lib/modules/audio-pf31/superman_wcd9302_reset.ko
+39aa0dc416970b4671a5761f0e2d211c714596fbcdb2a73970a76aed17f9682d  vendor/lib/modules/audio-pf31/superman_wcd9302_reset.ko
 3a9e0e58d3ee6b3209b749ea866ef532fe2989b09d64363f5d2b66a0ca719843  vendor/lib/modules/audio-pf31/superman_slim_pio.ko
 4024b93510a38c6a2cc5a3129a70556b2f8a28dc38fa6e3ecac9ababee150194  vendor/lib/modules/audio-pf31/superman_amp.ko
 a3ac70f410e57209099c11bc8cca2078dcc974e193f1b73931cfd99ce3344fd0  vendor/lib/modules/audio-pf31/superman_audio_board_power.ko
@@ -11,4 +11,4 @@ bdf0e80c2821006ef06141303934e71ae06e202e79c61be0b1c22bad05834049  vendor/lib/mod
 19930ee8ad10b1e984949dc478ab2b82672530cf1eb7cb358a0f4f491857736a  vendor/lib/modules/audio-pf31/q6asm.ko
 6434d3727d47436ec42c2f48961eb27ecb01d791b4fbbad97bd32f80c4e4f5e9  vendor/lib/modules/audio-pf31/q6adm.ko
 e33875e5430c22e91e4883fc70e0eab40b005bae77d522fca360101b861c5095  vendor/lib/modules/audio-pf31/superman-pcm.ko
-2f6ca54a0b7a4fd314c929ac9c2ab93b282bcc9279ae0e3a21babcf019b52725  vendor/lib/hw/audio.primary.superman.so
+adaa44ba814215063cb477593b0254df5bb9a5aaa5a61b2dd596f1c39ba86863  vendor/lib/hw/audio.primary.superman.so

@@ -59,6 +59,9 @@ struct superman_stream_out {
     audio_channel_mask_t channel_mask;
     audio_format_t format;
     size_t frame_count;
+    /* CC26: back off PCM reopen after a failed open or hard write error. */
+    unsigned failures;
+    int64_t retry_at_ns;
 };
 
 struct superman_stream_in {
@@ -229,6 +232,30 @@ static void downmix_stereo(const int16_t *input, int16_t *output, size_t frames)
         output[i] = ((int32_t)input[2*i] + input[2*i+1]) / 2;
 }
 
+#define SUPERMAN_BACKOFF_MIN_NS  250000000LL
+#define SUPERMAN_BACKOFF_MAX_NS 4000000000LL
+
+static int64_t monotonic_ns(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+}
+
+/* Consume a buffer in real time without hardware, keeping the mixer clock steady. */
+static void discard_in_real_time(const struct superman_stream_out *out, size_t bytes,
+                                 int64_t started_ns)
+{
+    size_t frames = bytes / audio_stream_out_frame_size(&out->stream);
+    int64_t due = started_ns + (int64_t)frames * 1000000000LL / out->sample_rate;
+    int64_t now = monotonic_ns();
+    if (due > now) {
+        struct timespec ts = {.tv_sec = (due - now) / 1000000000LL,
+                              .tv_nsec = (due - now) % 1000000000LL};
+        nanosleep(&ts, NULL);
+    }
+}
+
 static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
                          size_t bytes)
 {
@@ -236,7 +263,13 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     if (!buffer || bytes > UINT_MAX || bytes % audio_stream_out_frame_size(stream))
         return -EINVAL;
     if (!bytes) return 0;
+    int64_t started = monotonic_ns();
     pthread_mutex_lock(&out->lock);
+    if (!out->pcm && out->failures && started < out->retry_at_ns) {
+        pthread_mutex_unlock(&out->lock);
+        discard_in_real_time(out, bytes, started);
+        return (ssize_t)bytes;
+    }
     int rc = out->pcm ? 0 : open_pcm(&out->pcm, false, out->sample_rate,
                                   audio_channel_count_from_out_mask(out->channel_mask));
     const int16_t *input = buffer;
@@ -250,8 +283,22 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
         remaining -= frames;
     }
     if (rc && out->pcm) { pcm_close(out->pcm); out->pcm = NULL; }
+    if (rc) {
+        /* Never reopen (and re-power the codec board) on every mixer write. */
+        unsigned shift = out->failures < 4 ? out->failures : 4;
+        int64_t backoff = SUPERMAN_BACKOFF_MIN_NS << shift;
+        if (backoff > SUPERMAN_BACKOFF_MAX_NS) backoff = SUPERMAN_BACKOFF_MAX_NS;
+        out->failures++;
+        out->retry_at_ns = monotonic_ns() + backoff;
+        ALOGE("speaker PCM failed (%d), failure %u; discarding audio, retry in %lld ms",
+              rc, out->failures, (long long)(backoff / 1000000));
+    } else if (out->failures) {
+        ALOGI("speaker PCM recovered after %u failures", out->failures);
+        out->failures = 0;
+    }
     pthread_mutex_unlock(&out->lock);
-    return rc ? rc : (ssize_t)bytes;
+    if (rc) discard_in_real_time(out, bytes, started);
+    return (ssize_t)bytes;
 }
 
 static int out_get_render_position(const struct audio_stream_out *stream,
