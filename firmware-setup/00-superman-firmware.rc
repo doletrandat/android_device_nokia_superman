@@ -1,0 +1,12 @@
+# CC53: per-phone firmware. Runs first among the vendor post-fs-data actions and blocks init until the
+# firmware store is verified and bound over /vendor/firmware/qcom/superman (first boot: built from this
+# phone's Windows Phone partitions, read-only). Audio (ADSP) and radio (WCNSS) start after this.
+service superman-firmware /system/bin/sh /vendor/bin/superman-firmware.sh
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:su:s0
+
+on post-fs-data
+    exec_start superman-firmware
