@@ -1,0 +1,6 @@
+# Add 998.4/1094.4/1190.4 MHz with PM8226 S2 turbo voltage switching.
+# cpufreq-dt builds its table at probe, so rebind it after the OPPs exist.
+on post-fs-data
+    insmod /vendor/lib/modules/cpufreq/superman-apc-dvfs.ko
+    write /sys/bus/platform/drivers/cpufreq-dt/unbind cpufreq-dt
+    write /sys/bus/platform/drivers/cpufreq-dt/bind cpufreq-dt
