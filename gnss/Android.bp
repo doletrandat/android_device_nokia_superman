@@ -1,0 +1,20 @@
+// Lumia 730 GPS: legacy gps.h module over QMI LOC/QRTR, loaded by the AOSP
+// android.hardware.gnss@1.0-impl passthrough wrapper.
+cc_library_shared {
+    name: "gps.superman",
+    vendor: true,
+    relative_install_path: "hw",
+    srcs: ["superman_gnss.c"],
+    header_libs: ["libhardware_headers"],
+    shared_libs: ["liblog"],
+    cflags: ["-Wall", "-Wextra", "-Werror", "-fvisibility=hidden"],
+}
+
+cc_binary {
+    name: "superman-gnss-test",
+    vendor: true,
+    srcs: ["superman_gnss.c", "gnss_test.c"],
+    header_libs: ["libhardware_headers"],
+    shared_libs: ["liblog"],
+    cflags: ["-Wall", "-Wextra", "-Werror"],
+}
