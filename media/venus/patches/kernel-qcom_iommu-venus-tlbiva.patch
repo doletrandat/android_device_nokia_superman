@@ -1,0 +1,35 @@
+# CC31 experiment: did NOT fix the encoder re-map corruption (see ledger CC31 result). Kept for reference.
+--- a/drivers/iommu/arm/arm-smmu/qcom_iommu.c
++++ b/drivers/iommu/arm/arm-smmu/qcom_iommu.c
+@@ -92,6 +92,13 @@
+ 	 * off) and redo TrustZone's secure configuration at resume.
+ 	 */
+ 	bool				 reset_on_suspend;
++	/*
++	 * TLBIVAL (leaf-only invalidate by VA) is an SMMUv2 addition; the MSM8226
++	 * Venus SMMU (MSM IOMMU v1 generation, downstream used TLBIVA) leaves stale
++	 * translations when unmapping with it, so a re-used IOVA reads the pages
++	 * that were mapped there before. Invalidate with TLBIVA instead.
++	 */
++	bool				 no_leaf_tlbi;
+ 	const struct qcom_iommu_bfb_reg	*bfb;
+ 	unsigned int			 num_bfb;
+ 	const struct qcom_iommu_sid	*sids;	/* one SMR slot per entry */
+@@ -335,7 +342,8 @@
+ 	if (qcom_iommu_sync_failed(cookie))
+ 		return;
+ 
+-	reg = leaf ? ARM_SMMU_CB_S1_TLBIVAL : ARM_SMMU_CB_S1_TLBIVA;
++	reg = leaf && !(qcom_domain->iommu->cfg && qcom_domain->iommu->cfg->no_leaf_tlbi) ?
++	      ARM_SMMU_CB_S1_TLBIVAL : ARM_SMMU_CB_S1_TLBIVA;
+ 
+ 	for (i = 0; i < fwspec->num_ids; i++) {
+ 		struct qcom_iommu_ctx *ctx = to_ctx(qcom_domain, fwspec->ids[i]);
+@@ -1688,6 +1696,7 @@
+ 	.no_stall = true,
+ 	.ctx_restore = true,
+ 	.reset_on_suspend = true,
++	.no_leaf_tlbi = true,
+ };
+ 
+ static const struct qcom_iommu_cfg msm8226_gpu_cfg = {

@@ -1,0 +1,132 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/helpers.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/helpers.c	2026-11-05 10:45:32.808081736 +0700
+@@ -7,6 +7,8 @@
+ #include <linux/list.h>
+ #include <linux/mutex.h>
+ #include <linux/slab.h>
++#include <linux/sizes.h>
++#include <linux/dma-buf.h>
+ #include <linux/kernel.h>
+ #include <media/videobuf2-dma-contig.h>
+ #include <media/v4l2-mem2mem.h>
+@@ -495,6 +497,100 @@
+ }
+ EXPORT_SYMBOL_GPL(venus_helper_get_ts_metadata);
+ 
++/*
++ * HFI 1xx (MSM8226) firmware stalls when a decoder input buffer holds only
++ * H.264 parameter sets (SPS/PPS/AUD/SEI, no slice) unless the buffer is
++ * flagged HFI_BUFFERFLAG_CODECCONFIG, as the downstream driver did for CSD.
++ * Android Codec2/OMX and most demuxers queue SPS/PPS as separate buffers.
++ */
++static bool venus_h264_header_only(struct vb2_buffer *vb, u32 offset, u32 len)
++{
++	const u8 *p = vb2_plane_vaddr(vb, 0);
++	bool nal = false;
++	u32 i;
++
++	if (!p || !len || len > SZ_64K || len > vb2_plane_size(vb, 0) ||
++	    offset > vb2_plane_size(vb, 0) - len)
++		return false;
++	p += offset;
++	for (i = 0; i + 3 < len; i++) {
++		u8 type;
++
++		if (p[i] || p[i + 1] || p[i + 2] != 1)
++			continue;
++		type = p[i + 3] & 0x1f;
++		if (type >= 1 && type <= 5)
++			return false;
++		nal = true;
++		i += 3;
++	}
++	return nal;
++}
++
++/*
++ * csd_mode: 0 = queue header-only buffers unchanged (firmware stalls),
++ * 1 = flag them HFI_BUFFERFLAG_CODECCONFIG, 2 = hold them and prepend their
++ * bytes to the next slice buffer, so the firmware sees SPS/PPS+IDR together.
++ */
++static int venus_csd_mode = 2;
++MODULE_IMPORT_NS("DMA_BUF");
++module_param_named(csd_mode, venus_csd_mode, int, 0644);
++MODULE_PARM_DESC(csd_mode, "MSM8226 H.264 header-only input: 0 raw, 1 CODECCONFIG flag, 2 merge");
++
++/* Returns true when the buffer was consumed here and must not go to firmware. */
++static bool venus_msm8226_csd(struct venus_inst *inst, struct vb2_v4l2_buffer *vbuf,
++			      struct hfi_frame_data *fdata)
++{
++	struct vb2_buffer *vb = &vbuf->vb2_buf;
++	struct dma_buf *dbuf = vb->memory == VB2_MEMORY_DMABUF ? vb->planes[0].dbuf : NULL;
++	u32 len = fdata->filled_len, off = fdata->offset, size;
++	bool hdr;
++	u8 *p;
++
++	if (inst->session_type != VIDC_SESSION_TYPE_DEC || !IS_V1(inst->core) ||
++	    !inst->fmt_out || inst->fmt_out->pixfmt != V4L2_PIX_FMT_H264 || !venus_csd_mode)
++		return false;
++
++	hdr = venus_h264_header_only(vb, off, len);
++	dev_dbg(inst->core->dev, "csd: idx %u len %u hdr %d mode %d pending %u\n",
++		vb->index, len, hdr, venus_csd_mode, inst->msm8226_csd_len);
++
++	if (venus_csd_mode == 1) {
++		if (hdr)
++			fdata->flags |= HFI_BUFFERFLAG_CODECCONFIG;
++		return false;
++	}
++
++	p = vb2_plane_vaddr(vb, 0);
++	size = vb2_plane_size(vb, 0);
++	if (hdr) {
++		if (inst->msm8226_csd_len + len <= sizeof(inst->msm8226_csd)) {
++			memcpy(inst->msm8226_csd + inst->msm8226_csd_len, p + off, len);
++			inst->msm8226_csd_len += len;
++		}
++		v4l2_m2m_src_buf_remove_by_buf(inst->m2m_ctx, vbuf);
++		v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_DONE);
++		return true;
++	}
++
++	if (inst->msm8226_csd_len && p && len &&
++	    off + len + inst->msm8226_csd_len <= size) {
++		u32 n = inst->msm8226_csd_len;
++
++		if (dbuf)
++			dma_buf_begin_cpu_access(dbuf, DMA_BIDIRECTIONAL);
++		memmove(p + off + n, p + off, len);
++		memcpy(p + off, inst->msm8226_csd, n);
++		if (dbuf)
++			dma_buf_end_cpu_access(dbuf, DMA_BIDIRECTIONAL);
++		fdata->filled_len = len + n;
++		vb2_set_plane_payload(vb, 0, vb2_get_plane_payload(vb, 0) + n);
++		dev_dbg(inst->core->dev, "csd: prepended %u bytes to idx %u\n", n, vb->index);
++	}
++	inst->msm8226_csd_len = 0;
++	return false;
++}
++
+ static int
+ session_process_buf(struct venus_inst *inst, struct vb2_v4l2_buffer *vbuf)
+ {
+@@ -519,6 +615,9 @@
+ 		if (vbuf->flags & V4L2_BUF_FLAG_LAST || !fdata.filled_len)
+ 			fdata.flags |= HFI_BUFFERFLAG_EOS;
+ 
++		if (venus_msm8226_csd(inst, vbuf, &fdata))
++			return 0;
++
+ 		if (inst->session_type == VIDC_SESSION_TYPE_DEC)
+ 			put_ts_metadata(inst, vbuf);
+ 
+@@ -1549,6 +1648,9 @@
+ 
+ 	mutex_lock(&inst->lock);
+ 
++	if (V4L2_TYPE_IS_OUTPUT(q->type))
++		inst->msm8226_csd_len = 0;
++
+ 	if (inst->streamon_out & inst->streamon_cap) {
+ 		ret = hfi_session_stop(inst);
+ 		ret |= hfi_session_unload_res(inst);

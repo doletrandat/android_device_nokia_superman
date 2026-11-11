@@ -1,0 +1,69 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/hfi_venus.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/hfi_venus.c	2026-11-05 01:01:21.325926657 +0700
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <linux/delay.h>
++#include <linux/pm_runtime.h>
+ #include <linux/device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/interrupt.h>
+@@ -496,6 +497,7 @@
+ 
+ 	if (count >= max_tries)
+ 		ret = -ETIMEDOUT;
++	dev_dbg(dev, "boot_core status %#x tries %u ret %d\n", ctrl_status, count, ret);
+ 
+ 	if (IS_IRIS2(hdev->core) || IS_IRIS2_1(hdev->core)) {
+ 		writel(0x1, cpu_cs_base + CPU_CS_H2XSOFTINTEN_V6);
+@@ -661,6 +663,32 @@
+ 	if (hdev->power_enabled)
+ 		return 0;
+ 
++	if (IS_V1(hdev->core)) {
++		/*
++		 * msm8226 keeps the venus0 GDSC on across runtime suspend (no genpd:
++		 * its "off" asserts the block reset with the bus live), so nothing
++		 * clears the VBIF AXI halt requested in venus_halt_axi(). TrustZone's
++		 * resume restarts the Venus CPU and waits for it forever (CPU wedged in
++		 * SMC) while its bus is halted: release the halt first.
++		 */
++		void __iomem *vbif = hdev->core->vbif_base;
++		u32 v = readl(vbif + VBIF_AXI_HALT_CTRL0);
++
++		if (v & VBIF_AXI_HALT_CTRL0_HALT_REQ) {
++			writel(v & ~VBIF_AXI_HALT_CTRL0_HALT_REQ, vbif + VBIF_AXI_HALT_CTRL0);
++			dev_dbg(hdev->core->dev, "released VBIF AXI halt (ctrl1 %#x)\n",
++				readl(vbif + VBIF_AXI_HALT_CTRL1));
++		}
++		/*
++		 * Nor is the firmware's boot status register reset: a stale
++		 * PC_READY here would make venus_boot_core() return before the
++		 * firmware is up again.
++		 */
++		dev_dbg(hdev->core->dev, "resume: stale boot status %#x\n",
++			 readl(hdev->core->cpu_cs_base + CPU_CS_SCIACMDARG0));
++		writel(0, hdev->core->cpu_cs_base + CPU_CS_SCIACMDARG0);
++	}
++
+ 	ret = venus_set_hw_state_resume(hdev->core);
+ 	if (ret)
+ 		goto err;
+@@ -1129,6 +1157,9 @@
+ 
+ 	if (!hdev)
+ 		return IRQ_NONE;
++	/* With the core runtime-suspended its clocks are off; a register read stalls the bus. */
++	if (pm_runtime_suspended(core->dev))
++		return IRQ_NONE;
+ 
+ 	cpu_cs_base = hdev->core->cpu_cs_base;
+ 	wrapper_base = hdev->core->wrapper_base;
+@@ -1516,6 +1547,7 @@
+ 		mutex_unlock(&hdev->lock);
+ 		return ret;
+ 	}
++	dev_dbg(dev, "power collapsed (status %#x)\n", ctrl_status);
+ 
+ 	hdev->suspended = true;
+ 

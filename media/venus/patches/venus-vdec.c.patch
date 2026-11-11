@@ -1,0 +1,67 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/vdec.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/vdec.c	2026-11-05 14:07:01.592161553 +0700
+@@ -1218,8 +1218,19 @@
+ 
+ static void vdec_cancel_dst_buffers(struct venus_inst *inst)
+ {
++	struct venus_buffer *vbuf, *n;
+ 	struct vb2_v4l2_buffer *buf;
+ 
++	/*
++	 * Capture buffers parked on delayed_process (queued while the firmware
++	 * still held them as references) are returned below. Unlink them, or
++	 * after a seek they are handed to the firmware twice (QBUF again, then
++	 * the delayed work's stale entry) or linked into the list twice. The
++	 * MSM8226 firmware dies on the duplicate (Err_Fatal vbuffer.c:623).
++	 */
++	list_for_each_entry_safe(vbuf, n, &inst->delayed_process, ref_list)
++		list_del_init(&vbuf->ref_list);
++
+ 	while ((buf = v4l2_m2m_dst_buf_remove(inst->m2m_ctx)))
+ 		v4l2_m2m_buf_done(buf, VB2_BUF_STATE_ERROR);
+ }
+@@ -1274,6 +1285,8 @@
+ 	return ret;
+ }
+ 
++static void vdec_session_release(struct venus_inst *inst);
++
+ static void vdec_stop_streaming(struct vb2_queue *q)
+ {
+ 	struct venus_inst *inst = vb2_get_drv_priv(q);
+@@ -1302,6 +1315,12 @@
+ 
+ unlock:
+ 	mutex_unlock(&inst->lock);
++
++	if (inst->release_deferred && !inst->buf_count &&
++	    !inst->streamon_out && !inst->streamon_cap) {
++		inst->release_deferred = false;
++		vdec_session_release(inst);
++	}
+ }
+ 
+ static void vdec_session_release(struct venus_inst *inst)
+@@ -1362,8 +1381,20 @@
+ 	mutex_unlock(&inst->lock);
+ 
+ 	inst->buf_count--;
+-	if (!inst->buf_count)
+-		vdec_session_release(inst);
++	/*
++	 * QBUF of a DMABUF on an index that held another dmabuf cleans up the old
++	 * buffer while streaming. Releasing the session then (count briefly 0)
++	 * stops a running firmware session; the MSM8226 firmware crashes in the
++	 * resulting flush. Defer the release to stop_streaming instead.
++	 */
++	if (!inst->buf_count) {
++		if (inst->streamon_out || inst->streamon_cap) {
++			inst->release_deferred = true;
++		} else {
++			inst->release_deferred = false;
++			vdec_session_release(inst);
++		}
++	}
+ }
+ 
+ static void vdec_vb2_buf_queue(struct vb2_buffer *vb)

@@ -1,0 +1,9 @@
+990d240c4a99486a9a3d24d8ffdaff87e529ea7b92fbd80e31f54f4693594ead  /vendor/firmware/qcom/superman/qcvss8626.mbn
+82594a2b4751bfad01811b7df469adf6384a6d1f7d83a4b6afb6a921aa512363  /vendor/lib/modules/venus/v4l2-mem2mem.ko
+c0218e91d1f5c1d2b0a81432ef20cc217efd7d433b447d5a5c3d077e830ba8b0  /vendor/lib/modules/venus/venus-core.ko
+49f166edb888bdb64f669a89ec99200ca6e384db1c340f227d1392675fac7aac  /vendor/lib/modules/venus/venus-dec.ko
+a8164b2b3ea4f560d271398cc88c0904c23a3ce31a4b8cec73da59ebefc99c96  /vendor/lib/modules/venus/venus-enc.ko
+e93b9252b2002ee6590f1128564dba785755d8c56a4c3f7fdac78565fa4ec1a1  /vendor/lib/modules/venus/videobuf2-common.ko
+a39e789ad0d364d837292bd57520f7b4fbdaf218151a6ec709c32ac96af44054  /vendor/lib/modules/venus/videobuf2-dma-contig.ko
+872b82535772580251c3a8fda1661a1a14d18c793b8a4c292747b5aa8563e792  /vendor/lib/modules/venus/videobuf2-memops.ko
+9b581ae2b8d4a3ece5425e7497a734d63aa1049f4732dd8c6d636c8db393afbb  /vendor/lib/modules/venus/videobuf2-v4l2.ko

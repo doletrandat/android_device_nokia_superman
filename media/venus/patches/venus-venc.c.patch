@@ -1,0 +1,57 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/venc.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/venc.c	2026-11-05 12:13:06.899189663 +0700
+@@ -730,9 +730,12 @@
+ 		    ctr->profile.h264 == V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_HIGH)
+ 			h264_transform.enable_type = ctr->h264_8x8_transform;
+ 
+-		ret = hfi_session_set_property(inst, ptype, &h264_transform);
+-		if (ret)
+-			return ret;
++		/* HFI 1xx has no 8x8 transform property (the profile selects it). */
++		if (!IS_V1(inst->core)) {
++			ret = hfi_session_set_property(inst, ptype, &h264_transform);
++			if (ret)
++				return ret;
++		}
+ 
+ 		if (ctr->layer_bitrate) {
+ 			unsigned int i;
+@@ -1214,8 +1217,28 @@
+ 	mutex_unlock(&inst->lock);
+ 
+ 	inst->buf_count--;
+-	if (!inst->buf_count)
++	/* See vdec_buf_cleanup(): DMABUF re-import must not end a running session. */
++	if (!inst->buf_count) {
++		if (inst->streamon_out || inst->streamon_cap) {
++			inst->release_deferred = true;
++		} else {
++			inst->release_deferred = false;
++			venc_release_session(inst);
++		}
++	}
++}
++
++static void venc_stop_streaming(struct vb2_queue *q)
++{
++	struct venus_inst *inst = vb2_get_drv_priv(q);
++
++	venus_helper_vb2_stop_streaming(q);
++
++	if (inst->release_deferred && !inst->buf_count &&
++	    !inst->streamon_out && !inst->streamon_cap) {
++		inst->release_deferred = false;
+ 		venc_release_session(inst);
++	}
+ }
+ 
+ static int venc_verify_conf(struct venus_inst *inst)
+@@ -1343,7 +1366,7 @@
+ 	.buf_cleanup = venc_buf_cleanup,
+ 	.buf_prepare = venus_helper_vb2_buf_prepare,
+ 	.start_streaming = venc_start_streaming,
+-	.stop_streaming = venus_helper_vb2_stop_streaming,
++	.stop_streaming = venc_stop_streaming,
+ 	.buf_queue = venc_vb2_buf_queue,
+ };
+ 

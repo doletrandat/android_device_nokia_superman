@@ -1,0 +1,22 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/core.h	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/core.h	2026-11-05 12:12:54.663005319 +0700
+@@ -175,6 +175,7 @@
+  * @hwmode_dev:	a flag indicating that HW_CTRL_TRIGGER is used in clock driver
+  */
+ struct venus_core {
++	bool msm8226_pc;	/* power-collapsed: SMMU must reset the block before resume */
+ 	void __iomem *base;
+ 	void __iomem *vbif_base;
+ 	void __iomem *cpu_base;
+@@ -515,6 +516,11 @@
+ 	bool drain_active;
+ 	enum venus_inst_modes flags;
+ 	struct ida dpb_ids;
++	/* MSM8226 HFI 1xx: H.264 parameter sets held until the next slice buffer */
++	u32 msm8226_csd_len;
++	u8 msm8226_csd[4096];
++	/* buf_count hit 0 while streaming (DMABUF re-import): release at stream off */
++	bool release_deferred;
+ };
+ 
+ #define IS_V1(core)	((core)->res->hfi_version == HFI_VERSION_1XX)

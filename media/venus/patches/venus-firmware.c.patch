@@ -1,0 +1,61 @@
+--- /home/doletrandat/.cache/superman-r37-smp-source-20260924/drivers/media/platform/qcom/venus/firmware.c	2026-08-27 16:58:50.000000000 +0700
++++ /home/doletrandat/.cache/superman-cc18-venus-20261104/mod/firmware.c	2026-11-04 20:18:11.768505789 +0700
+@@ -15,6 +15,7 @@
+ #include <linux/of_device.h>
+ #include <linux/firmware/qcom/qcom_scm.h>
+ #include <linux/sizes.h>
++#include <linux/slab.h>
+ #include <linux/soc/qcom/mdt_loader.h>
+ 
+ #include "core.h"
+@@ -79,6 +80,40 @@
+ 	return 0;
+ }
+ 
++/*
++ * qcom_mdt_load() for TrustZone, except that a rejected PAS memory setup is
++ * not fatal. The MSM8226 (Lumia 730) TrustZone authenticates the stock
++ * qcvss8626.mbn metadata but answers PAS_MEM_SETUP with -EINVAL; the segments
++ * are loaded at their linked addresses, so nothing needs relocating, and the
++ * later auth-and-reset still decides whether TrustZone accepts the image.
++ */
++static int venus_tz_load(struct device *dev, const struct firmware *mdt,
++			 const char *fwname, void *mem_va, phys_addr_t mem_phys,
++			 size_t mem_size)
++{
++	size_t metadata_len;
++	void *metadata;
++	int ret;
++
++	metadata = qcom_mdt_read_metadata(mdt, &metadata_len, fwname, dev);
++	if (IS_ERR(metadata))
++		return PTR_ERR(metadata);
++	/* A failed earlier attempt leaves PAS half-initialised; TZ then refuses init. */
++	qcom_scm_pas_shutdown(VENUS_PAS_ID);
++	ret = qcom_scm_pas_init_image(VENUS_PAS_ID, metadata, metadata_len, NULL);
++	kfree(metadata);
++	if (ret) {
++		dev_err(dev, "error %d initializing firmware %s\n", ret, fwname);
++		return ret;
++	}
++	ret = qcom_scm_pas_mem_setup(VENUS_PAS_ID, mem_phys, mem_size);
++	if (ret)
++		dev_warn(dev, "TrustZone rejected PAS memory setup (%d); loading at linked addresses\n",
++			 ret);
++	return qcom_mdt_load_no_init(dev, mdt, fwname, VENUS_PAS_ID, mem_va,
++				     mem_phys, mem_size, NULL);
++}
++
+ static int venus_load_fw(struct venus_core *core, const char *fwname,
+ 			 phys_addr_t *mem_phys, size_t *mem_size)
+ {
+@@ -133,8 +168,7 @@
+ 	}
+ 
+ 	if (core->use_tz)
+-		ret = qcom_mdt_load(dev, mdt, fwname, VENUS_PAS_ID,
+-				    mem_va, *mem_phys, *mem_size, NULL);
++		ret = venus_tz_load(dev, mdt, fwname, mem_va, *mem_phys, *mem_size);
+ 	else
+ 		ret = qcom_mdt_load_no_init(dev, mdt, fwname, VENUS_PAS_ID,
+ 					    mem_va, *mem_phys, *mem_size, NULL);
