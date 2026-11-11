@@ -1,0 +1,5 @@
+# Second-stage mounts (internal eMMC install). /system was mounted by first-stage init. The boot partition
+# ("cache") is mounted here, read-only: the ramdisk's early logger only looks at partition 1 of a card. It is an
+# ext2 filesystem mounted with the ext4 driver: the ext2 driver refuses to mount once SELinux is active.
+/dev/block/platform/soc/f9824900.mmc/by-name/cache        /lumia_sd ext4 ro,sync,errors=continue wait
+/dev/block/platform/soc/f9824900.mmc/by-name/android_data /data ext4 noatime,nosuid,nodev,nodiscard,errors=remount-ro wait,check
