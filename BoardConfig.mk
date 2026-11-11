@@ -9,6 +9,10 @@ TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 BOARD_ROOT_EXTRA_FOLDERS += lumia_sd
 DEVICE_MANIFEST_FILE += device/nokia/superman/manifest-audio.xml
+DEVICE_MANIFEST_FILE += device/nokia/superman/audio/bluetooth/android.hardware.bluetooth.audio@2.0.xml
+DEVICE_MANIFEST_FILE += device/nokia/superman/media/venus/c2/android.hardware.media.c2-v4l2.xml
+DEVICE_MANIFEST_FILE += device/nokia/superman/camera/torch/android.hardware.camera.provider@2.4-legacy.xml
+DEVICE_MANIFEST_FILE += device/nokia/superman/gnss/android.hardware.gnss@1.0.xml
 
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RECOVERY := false
@@ -31,7 +35,7 @@ BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
 
 BOARD_KERNEL_CMDLINE := init=/init androidboot.hardware=superman
 BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive printk.devkmsg=on
-BOARD_KERNEL_CMDLINE += buildvariant=eng sdhci.debug_quirks=0x12008068
+BOARD_KERNEL_CMDLINE += buildvariant=eng sdhci.debug_quirks=0x12008008
 
 BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 67108864

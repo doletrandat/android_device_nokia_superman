@@ -1,1 +1,4 @@
 /lumia_sd(/.*)?                                      u:object_r:rootfs:s0
+
+# Venus V4L2 Codec2 HAL (CC25b): runs in the vendor mediacodec domain.
+/(vendor|system/vendor)/bin/hw/android\.hardware\.media\.c2@1\.0-service-v4l2  u:object_r:mediacodec_exec:s0

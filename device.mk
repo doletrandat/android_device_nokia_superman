@@ -93,7 +93,7 @@ PRODUCT_PACKAGES += \
 
 # Reference audio plumbing for framework bring-up; no physical codec support.
 PRODUCT_COPY_FILES += \
-    frameworks/av/services/audiopolicy/config/audio_policy_configuration_generic.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
+    device/nokia/superman/audio/bluetooth/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
     frameworks/av/services/audiopolicy/config/primary_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/primary_audio_policy_configuration.xml \
     frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
     frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
@@ -112,9 +112,13 @@ PRODUCT_COPY_FILES += \
     frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_audio.xml \
     frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml
 
-# This mainline kernel has no /dev/ion for Android 11 Codec2 linear buffers.
-# Use the software OMX catalogue until a compatible Codec2 allocator is available.
-PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.ccodec=0
+# This mainline kernel has no /dev/ion. Codec2 linear blocks come from the gralloc
+# BLOB allocator instead (C2PlatformAllocatorStore BLOB=19 | BUFFERQUEUE=18), which
+# gralloc.superman_native implements as linear R8 buffers mapped through DMA-BUF.
+# Bits 20/21 (V4L2_BUFFERQUEUE/V4L2_BUFFERPOOL, v4l2_codec2 V4L2AllocatorId) let the
+# Venus V4L2 Codec2 HAL create its own output pools; without them the framework falls
+# back to the basic gralloc pool, which v4l2_codec2's VideoFramePool rejects.
+PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.c2-poolmask=3932160
 
 # Reduce cold SwiftShader JIT latency on ARM32; compare steady-state rendering too.
 # Set to 0 and restart graphics clients to restore the original codegen policy.
@@ -161,3 +165,40 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += ro.superman.gpu_progress=1
 
 # Publish calibrated battery current through the existing Health HAL.
 $(call inherit-product, device/nokia/superman/power/current/product.mk)
+$(call inherit-product, device/nokia/superman/power/charger/product.mk)
+$(call inherit-product, device/nokia/superman/power/cpuidle/product.mk)
+$(call inherit-product, device/nokia/superman/power/cpufreq/product.mk)
+$(call inherit-product, device/nokia/superman/memory/zram/product.mk)
+$(call inherit-product, device/nokia/superman/graphics/native-kms/product.mk)
+$(call inherit-product, device/nokia/superman/audio/bluetooth/product.mk)
+
+# Venus hardware video codec via the V4L2 Codec2 HAL (IComponentStore/default).
+# The Venus kernel modules are loaded by media/venus/init (superman-venus.rc).
+PRODUCT_PACKAGES += \
+    android.hardware.media.c2@1.0-service-v4l2 \
+    libv4l2_codec2_components \
+    libstagefright_bufferqueue_helper_novndk \
+    android.hardware.media.bufferpool@1.0
+PRODUCT_COPY_FILES += \
+    device/nokia/superman/media/venus/c2/media_codecs_c2.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_c2.xml \
+    device/nokia/superman/media/venus/c2/codec2.vendor.ext.policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/codec2.vendor.ext.policy \
+    device/nokia/superman/media/venus/c2/android.hardware.media.c2-v4l2-seccomp_policy:$(TARGET_COPY_OUT_VENDOR)/etc/seccomp_policy/android.hardware.media.c2-v4l2-seccomp_policy
+
+# Flashlight: torch-only camera HAL (camera.superman) behind the legacy camera
+# provider. The flash feature makes SystemUI show the Flashlight tile.
+PRODUCT_PACKAGES += \
+    camera.superman \
+    android.hardware.camera.provider@2.4-impl \
+    android.hardware.camera.provider@2.4-service
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.camera.flash-autofocus.xml
+
+# GPS: legacy gps.superman module (QMI LOC over QRTR, gnss/) behind the AOSP
+# GNSS 1.0 passthrough service. Standalone only; no SUPL/XTRA.
+PRODUCT_PACKAGES += \
+    gps.superman \
+    android.hardware.gnss@1.0-impl \
+    android.hardware.gnss@1.0-service \
+    superman-gnss-test
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.location.gps.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.location.gps.xml

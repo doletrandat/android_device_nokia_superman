@@ -39,6 +39,10 @@ on fs
     trigger nonencrypted
 
 on post-fs
+    # Flashlight: gpio-leds "white:torch" (GPIO 32), written by the torch-only
+    # camera HAL running in the camera provider as user cameraserver.
+    chown cameraserver camera /sys/class/leds/white:torch/brightness
+    chmod 0660 /sys/class/leds/white:torch/brightness
     # Direct kernel firmware requests must see the installed vendor blobs.
     # P29 verifies the GPU and selects EGL/gralloc before HAL/core/zygote start.
     write /sys/module/firmware_class/parameters/path /vendor/firmware
