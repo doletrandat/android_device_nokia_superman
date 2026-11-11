@@ -1,0 +1,81 @@
+
+  --------------------------------------------------------------------------
+  Android 11 for the Nokia Lumia 730  -  setup (alpha)
+  --------------------------------------------------------------------------
+  1   Install Android on a microSD card            (start here)
+  2   Move Android to the internal storage         (optional, experimental)
+  3   Go back to Windows Phone
+  4   Check the files of this kit
+  5   Is this PC ready? (drivers, WPinternals, FFU, ...)
+  Q   Quit
+
+  Your choice > 5
+
+  --------------------------------------------------------------------------
+  Is this PC ready?   (cautions only - nothing here stops you)
+  --------------------------------------------------------------------------
+  [!]  Windows version 7.0.0.43 - this tool was written for Windows 10 and 11.
+  [!]  bcdedit.exe was not found. It is part of Windows and is needed to prepare the phone / the SD card.
+  [!]  diskpart.exe was not found. It is part of Windows and is needed to prepare the phone / the SD card.
+  [ok] Free space where this tool is: 3.4 GB
+  [ok] Internet connection works (needed once, to download the boot shim, about 1 MB)
+  [ok] Lumia USB drivers: found (a Nokia / Microsoft Mobile driver in the Windows driver store)
+  [ok] WPinternals: found (C:\Users\you/Desktop/tools/WPinternals/WPinternals.exe)
+  [ok] A stock FFU file: found (C:\Users\you/Downloads/RM1040_059W5H0.ffu)
+  [ok] adb: found (D:\Lumia730-Android-Setup/tools/platform-tools/adb.exe)
+
+  [!]  3 point(s) to look at above. These are cautions, not errors:
+       the checks look in the usual places only, so they can miss things. You can continue.
+
+  Press Enter to return to the menu > 
+
+  --------------------------------------------------------------------------
+  Android 11 for the Nokia Lumia 730  -  setup (alpha)
+  --------------------------------------------------------------------------
+  1   Install Android on a microSD card            (start here)
+  2   Move Android to the internal storage         (optional, experimental)
+  3   Go back to Windows Phone
+  4   Check the files of this kit
+  5   Is this PC ready? (drivers, WPinternals, FFU, ...)
+  Q   Quit
+
+  Your choice > 3
+
+  --------------------------------------------------------------------------
+  Go back to Windows Phone
+  --------------------------------------------------------------------------
+  A) Keep Android on the SD card, but start Windows Phone again (Windows Phone still installed):
+       in Android, open a root shell (adb shell, then su) and run:  superman-bootmenu windows
+       then restart. Windows Phone starts by default from then on.
+       Back to Android: restart while holding Volume Up, then run:  superman-bootmenu android
+       (The keys cannot move through the boot menu, so the default entry decides what starts.)
+
+  B) Remove Android completely and get a factory-fresh Windows Phone (works in every case,
+     also after Android was moved to the internal storage; tested):
+       1. Take the SD card out of the phone.
+       2. Open WPinternals. Choose "Flash" on the left, scroll down to "Flash original FFU"
+          and pick the stock FFU file of your phone.
+       3. Plug the phone into the PC.
+       4. Restart the phone: hold Power for about 10 seconds, until it vibrates.
+          WPinternals catches the phone while it starts; the "Flash" button becomes available.
+       5. Click "Flash". WPinternals shows "Restoring bootloader..." and then flashes the FFU.
+       6. Wait for "Flash successful". The phone restarts into the Windows Phone setup.
+
+     This removes Android, the boot shim and the bootloader unlock. Your phone's calibration and
+     addresses are kept. Never use the key combination shown on a red "!" screen.
+
+  This tool cannot press the buttons in WPinternals for you; the steps above are all there is.
+
+  Press Enter to return to the menu > 
+
+  --------------------------------------------------------------------------
+  Android 11 for the Nokia Lumia 730  -  setup (alpha)
+  --------------------------------------------------------------------------
+  1   Install Android on a microSD card            (start here)
+  2   Move Android to the internal storage         (optional, experimental)
+  3   Go back to Windows Phone
+  4   Check the files of this kit
+  5   Is this PC ready? (drivers, WPinternals, FFU, ...)
+  Q   Quit
+
+  Your choice > Q
