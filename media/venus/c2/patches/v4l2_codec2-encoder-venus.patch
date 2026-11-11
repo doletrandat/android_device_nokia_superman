@@ -1,0 +1,274 @@
+--- a/components/V4L2EncodeComponent.cpp
++++ b/components/V4L2EncodeComponent.cpp
+@@ -13,6 +13,8 @@
+ #include <utility>
+ 
+ #include <C2AllocatorGralloc.h>
++#include <sys/stat.h>
++#include <system/graphics.h>
+ #include <C2PlatformSupport.h>
+ #include <C2Work.h>
+ #include <android/hardware/graphics/common/1.0/types.h>
+@@ -47,7 +49,28 @@
+     // Get the C2PlanarLayout from the graphics block. The C2GraphicView returned by block.map()
+     // needs to be released before calling getGraphicBlockInfo(), or the lockYCbCr() call will block
+     // Indefinitely.
+-    C2PlanarLayout layout = block.map().get().layout();
++    C2PlanarLayout layout;
++    {
++        auto view = block.map().get();
++        layout = view.layout();
++        if (view.error() != C2_OK) {
++            // C2 maps the whole allocation and refuses it when the allocation's height is not a
++            // multiple of the chroma subsampling (e.g. Venus-layout NV12 buffers sized in whole
++            // pitch rows). The plane layout itself comes from getGraphicBlockInfo() below, so
++            // only the YUV/RGB decision is needed here: take it from the handle's pixel format.
++            uint32_t width, height, format, stride, igbpSlot, generation;
++            uint64_t usage, igbpId;
++            android::_UnwrapNativeCodec2GrallocMetadata(block.handle(), &width, &height, &format,
++                                                        &usage, &stride, &generation, &igbpId,
++                                                        &igbpSlot);
++            ALOGV("%s(): map failed: %d, format %#x", __func__, view.error(), format);
++            if (format == HAL_PIXEL_FORMAT_YCBCR_420_888 || format == HAL_PIXEL_FORMAT_YV12 ||
++                format == HAL_PIXEL_FORMAT_YCrCb_420_SP) {
++                layout.type = C2PlanarLayout::TYPE_YUV;
++                layout.numPlanes = 3;
++            }
++        }
++    }
+ 
+     // The above layout() cannot fill layout information and memset 0 instead if the input format is
+     // IMPLEMENTATION_DEFINED and its backed format is RGB. We fill the layout by using
+@@ -71,6 +94,13 @@
+     switch (layout.type) {
+     case C2PlanarLayout::TYPE_YUV: {
+         android_ycbcr ycbcr = getGraphicBlockInfo(block);
++        // Plane offsets must be relative to the buffer start. minigbm returns offsets for a
++        // lock without CPU usage; gralloc.superman_native returns mapped addresses with Y at the
++        // buffer start. Normalising to Y works for both (Y is first in every layout handled).
++        const uintptr_t base = reinterpret_cast<uintptr_t>(ycbcr.y);
++        ycbcr.y = nullptr;
++        ycbcr.cb = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(ycbcr.cb) - base);
++        ycbcr.cr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(ycbcr.cr) - base);
+         offsets[C2PlanarLayout::PLANE_Y] =
+                 static_cast<uint32_t>(reinterpret_cast<uintptr_t>(ycbcr.y));
+         offsets[C2PlanarLayout::PLANE_U] =
+@@ -94,6 +124,11 @@
+             semiplanar = true;
+         }
+ 
++        // The plane list below has one entry per root plane: Y + interleaved CbCr for
++        // semi-planar formats, Y/U/V for planar ones. (The map() fallback above leaves
++        // rootPlanes unset.)
++        layout.rootPlanes = semiplanar ? 2 : 3;
++
+         if (!crcb && !semiplanar) {
+             *format = media::VideoPixelFormat::PIXEL_FORMAT_I420;
+         } else if (!crcb && semiplanar) {
+@@ -145,7 +180,7 @@
+ }
+ 
+ // These are rather subjectively tuned.
+-constexpr size_t kInputBufferCount = 2;
++constexpr size_t kInputBufferCount = 8;  // one V4L2 buffer per convertor block (see mInputDmabufToV4L2Id)
+ constexpr size_t kOutputBufferCount = 2;
+ 
+ // Define V4L2_CID_MPEG_VIDEO_H264_SPS_PPS_BEFORE_IDR control code if not present in header files.
+@@ -685,6 +720,20 @@
+     // Calculate the input coded size from the format.
+     // TODO(dstaessens): How is this different from mInputLayout->coded_size()?
+     mInputCodedSize = media::V4L2Device::AllocatedSizeFromV4L2Format(*format);
++    // AllocatedSizeFromV4L2Format() derives the height from sizeimage / (bytesperline * 1.5).
++    // Venus pads sizeimage beyond the NV12 planes (384x256 -> 159744 -> "384x277"): the odd
++    // height made every map() of the convertor's blocks fail (the encoder got black frames)
++    // and the gralloc NV12 layout for it put CbCr at the wrong row. The driver's own
++    // single-plane NV12 format already states the coded size; use it when it is plausible.
++    if (V4L2_TYPE_IS_MULTIPLANAR(format->type) && format->fmt.pix_mp.num_planes == 1 &&
++        format->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_NV12) {
++        const media::Size fmtSize(format->fmt.pix_mp.width, format->fmt.pix_mp.height);
++        if (media::Rect(fmtSize).Contains(media::Rect(mVisibleSize)) &&
++            static_cast<size_t>(fmtSize.GetArea()) * 3 / 2 <=
++                    format->fmt.pix_mp.plane_fmt[0].sizeimage) {
++            mInputCodedSize = fmtSize;
++        }
++    }
+ 
+     // Add an input format convertor if the device doesn't support the requested input format.
+     // Note: The amount of input buffers in the convertor should match the amount of buffers on the
+@@ -1160,12 +1209,12 @@
+     // encode work is queued.
+ }
+ 
+-std::shared_ptr<C2LinearBlock> V4L2EncodeComponent::fetchOutputBlock() {
++std::shared_ptr<C2LinearBlock> V4L2EncodeComponent::fetchOutputBlock(size_t size) {
+     // TODO(dstaessens): fetchLinearBlock() might be blocking.
+-    ALOGV("Fetching linear block (size: %u)", mOutputBufferSize);
++    ALOGV("Fetching linear block (size: %zu)", size);
+     std::shared_ptr<C2LinearBlock> outputBlock;
+     c2_status_t status = mOutputBlockPool->fetchLinearBlock(
+-            mOutputBufferSize,
++            size,
+             C2MemoryUsage(C2MemoryUsage::CPU_READ |
+                           static_cast<uint64_t>(BufferUsage::VIDEO_ENCODER)),
+             &outputBlock);
+@@ -1434,7 +1483,25 @@
+     ALOG_ASSERT(mInputLayout->format() == format);
+     ALOG_ASSERT(mInputLayout->planes().size() == planes.size());
+ 
+-    auto buffer = mInputQueue->GetFreeBuffer();
++    // Keep each dmabuf on the same V4L2 buffer (see mInputDmabufToV4L2Id).
++    ::base::Optional<media::V4L2WritableBufferRef> buffer;
++    struct stat st;
++    const std::vector<int> fds = frame->getFDs();
++    if (!fds.empty() && fstat(fds[0], &st) == 0) {
++        const uint64_t key = static_cast<uint64_t>(st.st_ino);
++        auto it = mInputDmabufToV4L2Id.find(key);
++        if (it != mInputDmabufToV4L2Id.end()) {
++            buffer = mInputQueue->GetFreeBuffer(it->second);
++        } else if (mInputDmabufToV4L2Id.size() < mInputQueue->AllocatedBuffersCount()) {
++            const size_t id = mInputDmabufToV4L2Id.size();
++            mInputDmabufToV4L2Id.emplace(key, id);
++            buffer = mInputQueue->GetFreeBuffer(id);
++        }
++    }
++    if (!buffer) {
++        ALOGW("No dedicated input buffer for this dmabuf, using any free one");
++        buffer = mInputQueue->GetFreeBuffer();
++    }
+     if (!buffer) {
+         ALOGE("Failed to get free buffer from device input queue");
+         return false;
+@@ -1446,11 +1513,14 @@
+              .tv_usec = static_cast<time_t>(timestamp % ::base::Time::kMicrosecondsPerSecond)});
+     size_t bufferId = buffer->BufferId();
+ 
+-    for (size_t i = 0; i < planes.size(); ++i) {
++    // A single-plane V4L2 format (e.g. Venus NV12) carries all colour planes in V4L2 plane 0:
++    // set only that plane, with the whole frame as bytesused.
++    const size_t v4l2Planes = std::min(planes.size(), buffer->PlanesCount());
++    for (size_t i = 0; i < v4l2Planes; ++i) {
+         // Single-buffer input format may have multiple color planes, so bytesUsed of the single
+         // buffer should be sum of each color planes' size.
+         size_t bytesUsed = 0;
+-        if (planes.size() == 1) {
++        if (planes.size() == 1 || v4l2Planes == 1) {
+             bytesUsed = media::VideoFrame::AllocationSize(format, mInputLayout->coded_size());
+         } else {
+             bytesUsed = ::base::checked_cast<size_t>(
+@@ -1490,25 +1560,17 @@
+         return false;
+     }
+ 
+-    std::shared_ptr<C2LinearBlock> outputBlock = fetchOutputBlock();
+-    if (!outputBlock) {
+-        ALOGE("Failed to fetch output block");
+-        reportError(C2_CORRUPTED);
+-        return false;
+-    }
+-
++    // The client's block is fetched at dequeue time, sized to the encoded frame (see
++    // dequeueOutputBuffer()): fetching a max-size (2 MiB) block per frame up front allocated and
++    // zeroed fresh memory for every frame.
+     size_t bufferId = buffer->BufferId();
+ 
+-    std::vector<int> fds;
+-    fds.push_back(outputBlock->handle()->data[0]);
+-    if (!std::move(*buffer).QueueDMABuf(fds)) {
+-        ALOGE("Failed to queue output buffer using QueueDMABuf");
++    if (!std::move(*buffer).QueueMMap()) {
++        ALOGE("Failed to queue output buffer using QueueMMap");
+         reportError(C2_CORRUPTED);
+         return false;
+     }
+ 
+-    ALOG_ASSERT(!mOutputBuffersMap[bufferId]);
+-    mOutputBuffersMap[bufferId] = std::move(outputBlock);
+     ALOGV("%s(): Queued buffer in output queue (bufferId: %zu)", __func__, bufferId);
+     return true;
+ }
+@@ -1571,13 +1633,24 @@
+           ", bufferId: %zu, data size: %zu, EOS: %d)",
+           timestamp.InMicroseconds(), buffer->BufferId(), encodedDataSize, buffer->IsLast());
+ 
+-    if (!mOutputBuffersMap[buffer->BufferId()]) {
+-        ALOGE("Failed to find output block associated with output buffer");
+-        reportError(C2_CORRUPTED);
+-        return false;
++    std::shared_ptr<C2LinearBlock> block;
++    if (encodedDataSize > 0) {
++        // Copy the bitstream from the driver's MMAP buffer into a client block of that size.
++        block = fetchOutputBlock(encodedDataSize);
++        if (!block) {
++            ALOGE("Failed to fetch output block (%zu bytes)", encodedDataSize);
++            return false;
++        }
++        const uint8_t* src = static_cast<const uint8_t*>(buffer->GetPlaneMapping(0));
++        C2WriteView view = block->map().get();
++        if (!src || view.error() != C2_OK || view.capacity() < encodedDataSize) {
++            ALOGE("Failed to copy encoded data (%zu bytes, map error %d)", encodedDataSize,
++                  view.error());
++            reportError(C2_CORRUPTED);
++            return false;
++        }
++        memcpy(view.data(), src + buffer->GetPlaneDataOffset(0), encodedDataSize);
+     }
+-
+-    std::shared_ptr<C2LinearBlock> block = std::move(mOutputBuffersMap[buffer->BufferId()]);
+     if (encodedDataSize > 0) {
+         onOutputBufferDone(encodedDataSize, buffer->IsKeyframe(), timestamp.InMicroseconds(),
+                            std::move(block));
+@@ -1636,9 +1709,13 @@
+         return false;
+     }
+ 
+-    // No memory is allocated here, we just generate a list of buffers on the output queue, which
+-    // will hold memory handles to the real buffers.
+-    if (mOutputQueue->AllocateBuffers(kOutputBufferCount, V4L2_MEMORY_DMABUF) <
++    // The bitstream (V4L2 capture) queue uses MMAP buffers owned by the driver and the encoded
++    // data is copied into the client's linear block. Venus HFI 1xx (MSM8226) keeps encoder
++    // output buffers in static mode: the driver registers them with the firmware at STREAMON,
++    // and DMABUF buffers only exist once queued (after STREAMON), so the firmware received
++    // unregistered buffers and died (Err_Fatal vbuffer.c:1319). Encoded frames are small, so
++    // the copy is cheap.
++    if (mOutputQueue->AllocateBuffers(kOutputBufferCount, V4L2_MEMORY_MMAP) <
+         kOutputBufferCount) {
+         ALOGE("Failed to create V4L2 output buffers.");
+         return false;
+@@ -1656,6 +1733,7 @@
+     if (!mInputQueue || mInputQueue->AllocatedBuffersCount() == 0) return;
+     mInputQueue->DeallocateBuffers();
+     mInputBuffersMap.clear();
++    mInputDmabufToV4L2Id.clear();
+ }
+ 
+ void V4L2EncodeComponent::destroyOutputBuffers() {
+--- a/components/include/v4l2_codec2/components/V4L2EncodeComponent.h
++++ b/components/include/v4l2_codec2/components/V4L2EncodeComponent.h
+@@ -6,6 +6,7 @@
+ #define ANDROID_V4L2_CODEC2_COMPONENTS_V4L2_ENCODE_COMPONENT_H
+ 
+ #include <atomic>
++#include <map>
+ #include <memory>
+ #include <optional>
+ 
+@@ -140,7 +141,7 @@
+     void flush();
+ 
+     // Fetch a new output buffer from the output block pool.
+-    std::shared_ptr<C2LinearBlock> fetchOutputBlock();
++    std::shared_ptr<C2LinearBlock> fetchOutputBlock(size_t size);
+ 
+     // Called on the encoder thread when the encoder is done using an input buffer.
+     void onInputBufferDone(uint64_t index);
+@@ -253,6 +254,10 @@
+ 
+     // List of work item indices and frames associated with each buffer in the device input queue.
+     std::vector<std::pair<int64_t, std::unique_ptr<InputFrame>>> mInputBuffersMap;
++    // Fixed V4L2 input buffer per dmabuf (by inode): re-pointing a V4L2 buffer at another
++    // dmabuf re-maps it in the Venus SMMU, and stale translations then fed the encoder pages
++    // of the previously mapped frame.
++    std::map<uint64_t, size_t> mInputDmabufToV4L2Id;
+ 
+     // Map of buffer indices and output blocks associated with each buffer in the output queue. This
+     // map keeps the C2LinearBlock buffers alive so we can avoid duplicated fds.

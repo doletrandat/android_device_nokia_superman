@@ -1,0 +1,17 @@
+--- a/media/codec2/hidl/1.0/utils/types.cpp
++++ b/media/codec2/hidl/1.0/utils/types.cpp
+@@ -750,6 +750,14 @@
+                 index, handle,
+                 baseBlocks, baseBlockIndices);
+     default:
++        // Vendor pool data (e.g. v4l2_codec2 C2VdaBqBlockPool, TYPE_BUFFERQUEUE + 256)
++        // has no HIDL representation. Its gralloc handle already carries the
++        // BufferQueue id/slot, so the receiver can queue it like a BUFFERQUEUE block.
++        if (blockPoolData->getType() >= 256) {
++            return _addBaseBlock(
++                    index, handle,
++                    baseBlocks, baseBlockIndices);
++        }
+         LOG(ERROR) << "Unknown C2BlockPoolData type.";
+         return false;
+     }

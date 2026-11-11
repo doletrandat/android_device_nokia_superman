@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Venus hardware codecs through the V4L2 Codec2 HAL (external/v4l2_codec2,
+  IComponentStore/default). Limits from the MSM8226 Venus core (HFI 1xx):
+  up to 1920x1088, 1080p30 = 244800 macroblocks/s.
+  No rank attribute: the HAL's rank 0x80 makes Venus the preferred decoder
+  (c2.android software 0x200, OMX 0x100). Set rank="1024" to fall back to
+  software (e.g. via cc28-venus-default-rollback).
+-->
+<MediaCodecs>
+    <Decoders>
+        <MediaCodec name="c2.v4l2.avc.decoder" type="video/avc">
+            <Limit name="size" min="64x64" max="1920x1088" />
+            <Limit name="alignment" value="2x2" />
+            <Limit name="block-size" value="16x16" />
+            <Limit name="blocks-per-second" range="1-244800" />
+            <Limit name="bitrate" range="1-20000000" />
+            <Feature name="adaptive-playback" />
+        </MediaCodec>
+    </Decoders>
+    <Encoders>
+        <!-- No rank attribute: the HAL's rank 0x80 makes Venus the preferred H.264 encoder.
+             Set rank="1024" to fall back to c2.android.avc.encoder. -->
+        <MediaCodec name="c2.v4l2.avc.encoder" type="video/avc">
+            <Limit name="size" min="96x96" max="1920x1088" />
+            <Limit name="alignment" value="2x2" />
+            <Limit name="block-size" value="16x16" />
+            <Limit name="blocks-per-second" range="1-244800" />
+            <Limit name="bitrate" range="1-20000000" />
+        </MediaCodec>
+    </Encoders>
+</MediaCodecs>

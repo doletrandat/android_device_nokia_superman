@@ -1,0 +1,45 @@
+# Superman Venus V4L2 Codec2 HAL: syscalls needed beyond the AOSP Codec2 base policy.
+# libselinux init (statfs64), gbm_gralloc/Mesa allocation (sysinfo, sched_*affinity, uname),
+# V4L2 device polling (eventfd2, epoll), and base/libutils thread setup.
+statfs64: 1
+sysinfo: 1
+sched_getaffinity: 1
+sched_setaffinity: 1
+uname: 1
+eventfd2: 1
+epoll_create1: 1
+epoll_ctl: 1
+epoll_pwait: 1
+getpriority: 1
+sched_getparam: 1
+sched_getscheduler: 1
+sched_setscheduler: 1
+sched_setparam: 1
+prlimit64: 1
+clock_getres: 1
+clock_nanosleep: 1
+membarrier: 1
+fsync: 1
+fdatasync: 1
+msync: 1
+getcwd: 1
+fchmod: 1
+fchown32: 1
+dup3: 1
+fcntl64: 1
+socket: 1
+connect: 1
+setsockopt: 1
+getsockopt: 1
+sendmsg: 1
+sendto: 1
+kill: 1
+tkill: 1
+gettid: 1
+getppid: 1
+mlock: 1
+munlock: 1
+rt_sigsuspend: 1
+rt_sigtimedwait: 1
+pselect6: 1
+poll: 1

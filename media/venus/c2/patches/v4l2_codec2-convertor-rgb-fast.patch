@@ -1,0 +1,57 @@
+--- a/common/FormatConverter.cpp
++++ b/common/FormatConverter.cpp
+@@ -9,6 +9,8 @@
+ 
+ #include <inttypes.h>
+ 
++#include <algorithm>
++#include <cstring>
+ #include <memory>
+ #include <string>
+ 
+@@ -281,16 +283,25 @@
+             break;
+         case convertMap(media::VideoPixelFormat::PIXEL_FORMAT_ABGR,
+                         media::VideoPixelFormat::PIXEL_FORMAT_NV12): {
+-            // There is no libyuv function to convert ABGR to NV12. Therefore, we first convert to
+-            // I420 on dst-Y plane and temporary U/V plane. Then we copy U and V pixels from
+-            // temporary planes to dst-UV interleavedly.
+-            const int tempStride = mVisibleSize.width() / 2;
+-            libyuv::ABGRToI420(srcRGB, srcStrideRGB, dstY, dstStrideY, mTempPlaneU.get(),
+-                               tempStride, mTempPlaneV.get(), tempStride, mVisibleSize.width(),
+-                               mVisibleSize.height());
+-            libyuv::MergeUVPlane(mTempPlaneU.get(), tempStride, mTempPlaneV.get(), tempStride,
+-                                 dstUV, dstStrideUV, mVisibleSize.width() / 2,
+-                                 mVisibleSize.height() / 2);
++            // Surface input (screen capture, GPU output) arrives in write-combined, i.e.
++            // uncached, buffers. libyuv's row converters do small strided loads (two rows at a
++            // time for chroma), which are very slow from uncached memory: they were ~57% of the
++            // HAL's CPU time while screen recording. Stream each band of rows into a cached
++            // scratch buffer with one sequential copy and convert from there, straight to NV12.
++            constexpr int kBandRows = 16;  // even, so chroma rows stay aligned
++            const int width = mVisibleSize.width();
++            const int height = mVisibleSize.height();
++            const size_t rowBytes = static_cast<size_t>(width) * 4;
++            std::unique_ptr<uint8_t[]> band(new uint8_t[rowBytes * kBandRows]);
++            for (int y = 0; y < height; y += kBandRows) {
++                const int rows = std::min(kBandRows, height - y);
++                for (int r = 0; r < rows; ++r) {
++                    memcpy(band.get() + r * rowBytes, srcRGB + (y + r) * srcStrideRGB, rowBytes);
++                }
++                libyuv::ABGRToNV12(band.get(), static_cast<int>(rowBytes), dstY + y * dstStrideY,
++                                   dstStrideY, dstUV + (y / 2) * dstStrideUV, dstStrideUV, width,
++                                   rows);
++            }
+             break;
+         }
+         default:
+--- a/components/Android.bp
++++ b/components/Android.bp
+@@ -35,6 +35,7 @@
+         "libui",
+     ],
+     static_libs: [
++        "libyuv_static",  // ABGRToNV12 for the convertor (not exported by libsfplugin_ccodec_utils)
+         "libv4l2_codec2_accel",
+         "libv4l2_codec2_common",
+     ],

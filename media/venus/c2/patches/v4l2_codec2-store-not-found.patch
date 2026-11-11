@@ -1,0 +1,26 @@
+--- a/store/V4L2ComponentStore.cpp
++++ b/store/V4L2ComponentStore.cpp
+@@ -86,6 +86,11 @@
+                                                 std::shared_ptr<C2Component>* const component) {
+     ALOGV("%s(%s)", __func__, name.c_str());
+ 
++    // Not one of ours: C2_NOT_FOUND, like the software store. C2_CORRUPTED equals
++    // the client's C2_TRANSACTION_FAILED, which makes Codec2Client drop this
++    // service and retry on every software codec it creates.
++    if (!V4L2ComponentName::isValid(name.c_str())) return C2_NOT_FOUND;
++
+     auto factory = GetFactory(name);
+     if (factory == nullptr) return C2_CORRUPTED;
+ 
+@@ -97,6 +102,11 @@
+         C2String name, std::shared_ptr<C2ComponentInterface>* const interface) {
+     ALOGV("%s(%s)", __func__, name.c_str());
+ 
++    // Not one of ours: C2_NOT_FOUND, like the software store. C2_CORRUPTED equals
++    // the client's C2_TRANSACTION_FAILED, which makes Codec2Client drop this
++    // service and retry on every software codec it creates.
++    if (!V4L2ComponentName::isValid(name.c_str())) return C2_NOT_FOUND;
++
+     auto factory = GetFactory(name);
+     if (factory == nullptr) return C2_CORRUPTED;
+ 

@@ -1,0 +1,34 @@
+--- a/plugin_store/C2VdaBqBlockPool.cpp
++++ b/plugin_store/C2VdaBqBlockPool.cpp
+@@ -1066,15 +1066,30 @@
+     ALOGV("detachBuffer: producer id = %" PRIu64 ", slot = %d", producerId, slotId);
+     std::lock_guard<std::mutex> lock(mMutex);
+     if (producerId == mProducerId && mProducer) {
++        auto it = mSlotAllocations.find(slotId);
++        // A block dropped before reaching the client (e.g. capture buffers queued to the decoder
++        // when a seek flushes it) still owns a dequeued slot with a buffer of the current format.
++        // Cancel it so the slot returns to the free list with its buffer: detaching it while
++        // allocation is disabled shrank the pool by one slot per dropped block, so after a few
++        // seeks too few output buffers were left and decoding stalled.
++        if (it != mSlotAllocations.end() &&
++            mProducer->cancelBuffer(slotId, Fence::NO_FENCE) == android::NO_ERROR) {
++            return;
++        }
++
+         if (mProducer->detachBuffer(slotId) != android::NO_ERROR) {
+             return;
+         }
+ 
+-        auto it = mSlotAllocations.find(slotId);
+         // It may happen that the slot is not included in |mSlotAllocations|, which means it is
+         // released after resolution change.
+         if (it != mSlotAllocations.end()) {
+             mSlotAllocations.erase(it);
++            // The pool is now short of buffers: allow the producer to allocate a replacement
++            // (fetchGraphicBlock() disables allocation again once the set is complete).
++            if (mSlotAllocations.size() < mBuffersRequested) {
++                mProducer->allowAllocation(true);
++            }
+         }
+     }
+ }

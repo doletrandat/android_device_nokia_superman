@@ -1,0 +1,600 @@
+--- a/common/FormatConverter.cpp
++++ b/common/FormatConverter.cpp
+@@ -6,6 +6,7 @@
+ #define LOG_TAG "FormatConverter"
+ 
+ #include <v4l2_codec2/common/FormatConverter.h>
++#include <v4l2_codec2/common/GpuRgbaToNv12.h>
+ 
+ #include <inttypes.h>
+ 
+@@ -15,6 +16,7 @@
+ #include <string>
+ 
+ #include <C2AllocatorGralloc.h>
++#include <cutils/properties.h>
+ #include <C2PlatformSupport.h>
+ #include <android/hardware/graphics/common/1.0/types.h>
+ #include <inttypes.h>
+@@ -113,6 +115,8 @@
+     return converter;
+ }
+ 
++FormatConverter::~FormatConverter() = default;
++
+ c2_status_t FormatConverter::initialize(media::VideoPixelFormat outFormat,
+                                         const media::Size& visibleSize, uint32_t inputCount,
+                                         const media::Size& codedSize) {
+@@ -149,7 +153,17 @@
+             return status;
+         }
+         mGraphicBlocks.emplace_back(new BlockEntry(std::move(block)));
+-        mAvailableQueue.push(mGraphicBlocks.back().get());
++        BlockEntry* entry = mGraphicBlocks.back().get();
++        if (outFormat == media::VideoPixelFormat::PIXEL_FORMAT_NV12) {
++            // Record luma pitch and chroma offset for the GPU path (no mapping per frame).
++            C2GraphicView view = entry->mBlock->map().get();
++            if (view.error() == C2_OK && view.layout().type == C2PlanarLayout::TYPE_YUV) {
++                entry->mPitch = view.layout().planes[C2PlanarLayout::PLANE_Y].rowInc;
++                entry->mUvOffset = static_cast<int>(view.data()[C2PlanarLayout::PLANE_U] -
++                                                    view.data()[C2PlanarLayout::PLANE_Y]);
++            }
++        }
++        mAvailableQueue.push(entry);
+     }
+ 
+     mOutFormat = outFormat;
+@@ -175,6 +189,38 @@
+     BlockEntry* entry = mAvailableQueue.front();
+     std::shared_ptr<C2GraphicBlock> outputBlock = entry->mBlock;
+ 
++    // RGB input (screen capture, GPU output) -> NV12 on the GPU when possible.
++    if (mOutFormat == media::VideoPixelFormat::PIXEL_FORMAT_NV12 && entry->mPitch > 0) {
++        uint32_t w, h, format, stride, generation, igbpSlot;
++        uint64_t usage, igbpId;
++        android::_UnwrapNativeCodec2GrallocMetadata(inputBlock.handle(), &w, &h, &format, &usage,
++                                                    &stride, &generation, &igbpId, &igbpSlot);
++        const bool rgb = format == HAL_PIXEL_FORMAT_RGBA_8888 ||
++                         format == HAL_PIXEL_FORMAT_RGBX_8888 ||
++                         format == HAL_PIXEL_FORMAT_BGRA_8888 ||
++                         format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED;
++        if (rgb && !mGpuTried) {
++            mGpuTried = true;
++            if (property_get_bool("debug.superman.c2enc.gpu", true)) {
++                mGpu = GpuRgbaToNv12::Create();
++            }
++            ALOGI("RGB input (format %#x): %s conversion", format, mGpu ? "GPU" : "CPU");
++        }
++        if (rgb && mGpu) {
++            if (mGpu->convert(inputBlock, outputBlock->handle()->data[0],
++                              reinterpret_cast<uintptr_t>(entry), mVisibleSize.width(),
++                              mVisibleSize.height(), entry->mPitch, entry->mUvOffset)) {
++                entry->mAssociatedFrameIndex = frameIndex;
++                mAvailableQueue.pop();
++                *status = C2_OK;
++                return outputBlock->share(C2Rect(mVisibleSize.width(), mVisibleSize.height()),
++                                          C2Fence());
++            }
++            ALOGW("GPU conversion failed (format %#x); using the CPU from now on", format);
++            mGpu.reset();
++        }
++    }
++
+     const C2GraphicView& inputView = inputBlock.map().get();
+     C2PlanarLayout inputLayout = inputView.layout();
+ 
+--- a/common/include/v4l2_codec2/common/FormatConverter.h
++++ b/common/include/v4l2_codec2/common/FormatConverter.h
+@@ -17,6 +17,7 @@
+ namespace android {
+ 
+ class GraphicBuffer;
++class GpuRgbaToNv12;
+ 
+ // ImplDefinedToRGBXMap can provide the layout for RGB-backed IMPLEMENTATION_DEFINED format case,
+ // which will be failed to map by C2AllocationGralloc::map(). When the instance is created, it will
+@@ -43,7 +44,7 @@
+ 
+ class FormatConverter {
+ public:
+-    ~FormatConverter() = default;
++    ~FormatConverter();
+ 
+     FormatConverter(const FormatConverter&) = delete;
+     FormatConverter& operator=(const FormatConverter&) = delete;
+@@ -87,6 +88,9 @@
+ 
+         std::shared_ptr<C2GraphicBlock> mBlock;
+         uint64_t mAssociatedFrameIndex = kNoFrameAssociated;
++        // NV12 geometry of |mBlock| for the GPU path (0 when unknown).
++        int mPitch = 0;
++        int mUvOffset = 0;
+     };
+ 
+     FormatConverter() = default;
+@@ -108,6 +112,10 @@
+ 
+     media::VideoPixelFormat mOutFormat = media::VideoPixelFormat::PIXEL_FORMAT_UNKNOWN;
+     media::Size mVisibleSize;
++
++    // RGB -> NV12 on the GPU (created on first RGB input; null after a failure or if disabled).
++    std::unique_ptr<GpuRgbaToNv12> mGpu;
++    bool mGpuTried = false;
+ };
+ 
+ }  // namespace android
+--- a/common/Android.bp
++++ b/common/Android.bp
+@@ -9,6 +9,7 @@
+     srcs: [
+         "EncodeHelpers.cpp",
+         "FormatConverter.cpp",
++        "GpuRgbaToNv12.cpp",
+         "V4L2ComponentCommon.cpp",
+         "VideoTypes.cpp",
+     ],
+@@ -18,6 +19,8 @@
+     ],
+ 
+     shared_libs: [
++        "libEGL",
++        "libGLESv2",
+         "libchrome",
+         "libcutils",
+         "liblog",
+--- a/common/GpuRgbaToNv12.cpp
++++ b/common/GpuRgbaToNv12.cpp
+@@ -0,0 +1,297 @@
++// Copyright 2026 The Android Open Source Project
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++//#define LOG_NDEBUG 0
++#define LOG_TAG "GpuRgbaToNv12"
++
++#define EGL_EGLEXT_PROTOTYPES
++#define GL_GLEXT_PROTOTYPES
++
++#include <v4l2_codec2/common/GpuRgbaToNv12.h>
++
++#include <EGL/egl.h>
++#include <EGL/eglext.h>
++#include <GLES2/gl2.h>
++#include <GLES2/gl2ext.h>
++
++#include <C2AllocatorGralloc.h>
++#include <drm/drm_fourcc.h>
++#include <log/log.h>
++#include <ui/GraphicBuffer.h>
++
++namespace android {
++
++namespace {
++
++const char* kVertexShader =
++        "attribute vec2 pos;\n"
++        "varying vec2 uv;\n"
++        "void main() { uv = pos * 0.5 + 0.5; gl_Position = vec4(pos, 0.0, 1.0); }\n";
++// libyuv BT.601 limited range: Y = (66R + 129G + 25B + 0x1080) >> 8.
++const char* kLumaShader =
++        "#extension GL_OES_EGL_image_external : require\n"
++        "precision highp float;\n"
++        "varying vec2 uv;\n"
++        "uniform samplerExternalOES src;\n"
++        "void main() {\n"
++        "  vec3 c = texture2D(src, uv).rgb;\n"
++        "  gl_FragColor = vec4(dot(c, vec3(66.0, 129.0, 25.0)) / 256.0 + 16.5 / 255.0,"
++        " 0.0, 0.0, 1.0);\n"
++        "}\n";
++// U = (112B - 74G - 38R + 0x8080) >> 8, V = (112R - 94G - 18B + 0x8080) >> 8. A half-resolution
++// fragment centre lies on a 2x2 source block corner, so linear filtering averages the block.
++const char* kChromaShader =
++        "#extension GL_OES_EGL_image_external : require\n"
++        "precision highp float;\n"
++        "varying vec2 uv;\n"
++        "uniform samplerExternalOES src;\n"
++        "void main() {\n"
++        "  vec3 c = texture2D(src, uv).rgb;\n"
++        "  gl_FragColor = vec4(dot(c, vec3(-38.0, -74.0, 112.0)) / 256.0 + 128.5 / 255.0,\n"
++        "                      dot(c, vec3(112.0, -94.0, -18.0)) / 256.0 + 128.5 / 255.0,"
++        " 0.0, 1.0);\n"
++        "}\n";
++
++GLuint compileProgram(const char* fragment) {
++    auto compile = [](GLenum type, const char* source) -> GLuint {
++        GLuint shader = glCreateShader(type);
++        glShaderSource(shader, 1, &source, nullptr);
++        glCompileShader(shader);
++        GLint ok = 0;
++        glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
++        if (!ok) {
++            char log[512] = {};
++            glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
++            ALOGE("shader compile failed: %s", log);
++            glDeleteShader(shader);
++            return 0;
++        }
++        return shader;
++    };
++    GLuint vs = compile(GL_VERTEX_SHADER, kVertexShader);
++    GLuint fs = compile(GL_FRAGMENT_SHADER, fragment);
++    if (!vs || !fs) return 0;
++    GLuint program = glCreateProgram();
++    glAttachShader(program, vs);
++    glAttachShader(program, fs);
++    glBindAttribLocation(program, 0, "pos");
++    glLinkProgram(program);
++    glDeleteShader(vs);
++    glDeleteShader(fs);
++    GLint ok = 0;
++    glGetProgramiv(program, GL_LINK_STATUS, &ok);
++    if (!ok) {
++        ALOGE("program link failed");
++        glDeleteProgram(program);
++        return 0;
++    }
++    return program;
++}
++
++EGLImageKHR createDmabufImage(EGLDisplay display, int fd, uint32_t fourcc, int width, int height,
++                              int offset, int pitch) {
++    const EGLint attrs[] = {EGL_WIDTH, width, EGL_HEIGHT, height,
++                            EGL_LINUX_DRM_FOURCC_EXT, static_cast<EGLint>(fourcc),
++                            EGL_DMA_BUF_PLANE0_FD_EXT, fd,
++                            EGL_DMA_BUF_PLANE0_OFFSET_EXT, offset,
++                            EGL_DMA_BUF_PLANE0_PITCH_EXT, pitch, EGL_NONE};
++    return eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, nullptr, attrs);
++}
++
++}  // namespace
++
++// Render targets for one NV12 destination buffer: luma (R8) and interleaved chroma (GR88).
++struct GpuRgbaToNv12::Target {
++    EGLImageKHR images[2] = {EGL_NO_IMAGE_KHR, EGL_NO_IMAGE_KHR};
++    GLuint textures[2] = {0, 0};
++    GLuint framebuffers[2] = {0, 0};
++    int width = 0, height = 0, pitch = 0, uvOffset = 0;
++};
++
++// static
++std::unique_ptr<GpuRgbaToNv12> GpuRgbaToNv12::Create() {
++    std::unique_ptr<GpuRgbaToNv12> converter(new GpuRgbaToNv12());
++    if (!converter->initialize()) return nullptr;
++    return converter;
++}
++
++bool GpuRgbaToNv12::initialize() {
++    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
++    if (display == EGL_NO_DISPLAY || !eglInitialize(display, nullptr, nullptr)) {
++        ALOGE("eglInitialize failed: 0x%x", eglGetError());
++        return false;
++    }
++    mDisplay = display;
++    const EGLint configAttrs[] = {EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT, EGL_SURFACE_TYPE,
++                                  EGL_PBUFFER_BIT, EGL_NONE};
++    EGLConfig config;
++    EGLint count = 0;
++    if (!eglChooseConfig(display, configAttrs, &config, 1, &count) || count != 1) {
++        ALOGE("eglChooseConfig failed: 0x%x", eglGetError());
++        return false;
++    }
++    const EGLint contextAttrs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
++    EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttrs);
++    if (context == EGL_NO_CONTEXT) {
++        ALOGE("eglCreateContext failed: 0x%x", eglGetError());
++        return false;
++    }
++    mContext = context;
++    const EGLint pbufferAttrs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
++    EGLSurface surface = eglCreatePbufferSurface(display, config, pbufferAttrs);
++    if (surface == EGL_NO_SURFACE || !eglMakeCurrent(display, surface, surface, context)) {
++        ALOGE("eglCreatePbufferSurface/eglMakeCurrent failed: 0x%x", eglGetError());
++        return false;
++    }
++    mSurface = surface;
++
++    mProgramY = compileProgram(kLumaShader);
++    mProgramUV = compileProgram(kChromaShader);
++    if (!mProgramY || !mProgramUV) return false;
++    glGenTextures(1, &mSourceTexture);
++    glBindTexture(GL_TEXTURE_EXTERNAL_OES, mSourceTexture);
++    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
++    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
++    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
++    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
++    glDisable(GL_BLEND);
++    glDisable(GL_DITHER);
++    ALOGI("GPU RGBA->NV12 conversion ready (%s)", glGetString(GL_RENDERER));
++    return true;
++}
++
++GpuRgbaToNv12::~GpuRgbaToNv12() {
++    EGLDisplay display = static_cast<EGLDisplay>(mDisplay);
++    if (display == nullptr) return;
++    if (mContext) {
++        eglMakeCurrent(display, static_cast<EGLSurface>(mSurface), static_cast<EGLSurface>(mSurface),
++                       static_cast<EGLContext>(mContext));
++        for (auto& entry : mTargets) {
++            Target* t = entry.second.get();
++            glDeleteFramebuffers(2, t->framebuffers);
++            glDeleteTextures(2, t->textures);
++            for (EGLImageKHR image : t->images) {
++                if (image != EGL_NO_IMAGE_KHR) eglDestroyImageKHR(display, image);
++            }
++        }
++        if (mSourceTexture) glDeleteTextures(1, &mSourceTexture);
++        if (mProgramY) glDeleteProgram(mProgramY);
++        if (mProgramUV) glDeleteProgram(mProgramUV);
++        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
++        eglDestroyContext(display, static_cast<EGLContext>(mContext));
++    }
++    if (mSurface) eglDestroySurface(display, static_cast<EGLSurface>(mSurface));
++}
++
++GpuRgbaToNv12::Target* GpuRgbaToNv12::target(int dstFd, uint64_t dstKey, int width, int height,
++                                              int pitch, int uvOffset) {
++    auto it = mTargets.find(dstKey);
++    if (it != mTargets.end()) {
++        Target* t = it->second.get();
++        if (t->width == width && t->height == height && t->pitch == pitch &&
++            t->uvOffset == uvOffset) {
++            return t;
++        }
++        mTargets.erase(it);  // geometry changed (not expected): rebuild below
++    }
++    EGLDisplay display = static_cast<EGLDisplay>(mDisplay);
++    auto t = std::make_unique<Target>();
++    t->width = width;
++    t->height = height;
++    t->pitch = pitch;
++    t->uvOffset = uvOffset;
++    t->images[0] = createDmabufImage(display, dstFd, DRM_FORMAT_R8, width, height, 0, pitch);
++    t->images[1] = createDmabufImage(display, dstFd, DRM_FORMAT_GR88, width / 2, height / 2,
++                                     uvOffset, pitch);
++    if (t->images[0] == EGL_NO_IMAGE_KHR || t->images[1] == EGL_NO_IMAGE_KHR) {
++        ALOGE("dma-buf EGLImage creation failed: 0x%x", eglGetError());
++        for (EGLImageKHR image : t->images)
++            if (image != EGL_NO_IMAGE_KHR) eglDestroyImageKHR(display, image);
++        return nullptr;
++    }
++    glGenTextures(2, t->textures);
++    glGenFramebuffers(2, t->framebuffers);
++    for (int i = 0; i < 2; ++i) {
++        glBindTexture(GL_TEXTURE_2D, t->textures[i]);
++        glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, t->images[i]);
++        glBindFramebuffer(GL_FRAMEBUFFER, t->framebuffers[i]);
++        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->textures[i],
++                               0);
++        const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
++        if (status != GL_FRAMEBUFFER_COMPLETE) {
++            ALOGE("NV12 plane %d framebuffer incomplete: 0x%x", i, status);
++            glDeleteFramebuffers(2, t->framebuffers);
++            glDeleteTextures(2, t->textures);
++            for (EGLImageKHR image : t->images) eglDestroyImageKHR(display, image);
++            return nullptr;
++        }
++    }
++    Target* raw = t.get();
++    mTargets[dstKey] = std::move(t);
++    return raw;
++}
++
++bool GpuRgbaToNv12::convert(const C2ConstGraphicBlock& src, int dstFd, uint64_t dstKey, int width,
++                            int height, int pitch, int uvOffset) {
++    EGLDisplay display = static_cast<EGLDisplay>(mDisplay);
++    EGLSurface surface = static_cast<EGLSurface>(mSurface);
++    if (eglGetCurrentContext() != static_cast<EGLContext>(mContext) &&
++        !eglMakeCurrent(display, surface, surface, static_cast<EGLContext>(mContext))) {
++        ALOGE("eglMakeCurrent failed: 0x%x", eglGetError());
++        return false;
++    }
++    Target* t = target(dstFd, dstKey, width, height, pitch, uvOffset);
++    if (!t) return false;
++
++    // Import the source through its gralloc handle (no CPU mapping).
++    uint32_t w, h, format, stride, generation, igbpSlot;
++    uint64_t usage, igbpId;
++    android::_UnwrapNativeCodec2GrallocMetadata(src.handle(), &w, &h, &format, &usage, &stride,
++                                                &generation, &igbpId, &igbpSlot);
++    native_handle_t* handle = android::UnwrapNativeCodec2GrallocHandle(src.handle());
++    if (!handle) return false;
++    sp<GraphicBuffer> buffer = new GraphicBuffer(handle, GraphicBuffer::CLONE_HANDLE, w, h, format,
++                                                 1, usage, stride);
++    native_handle_delete(handle);
++    if (buffer->initCheck() != NO_ERROR) {
++        ALOGE("source GraphicBuffer import failed (%ux%u format %#x)", w, h, format);
++        return false;
++    }
++    const EGLint imageAttrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
++    EGLImageKHR image = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
++                                          static_cast<EGLClientBuffer>(buffer->getNativeBuffer()),
++                                          imageAttrs);
++    if (image == EGL_NO_IMAGE_KHR) {
++        ALOGE("source EGLImage failed (format %#x): 0x%x", format, eglGetError());
++        return false;
++    }
++
++    static const GLfloat kQuad[] = {-1, -1, 1, -1, -1, 1, 1, 1};
++    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, kQuad);
++    glEnableVertexAttribArray(0);
++    glActiveTexture(GL_TEXTURE0);
++    glBindTexture(GL_TEXTURE_EXTERNAL_OES, mSourceTexture);
++    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, image);
++
++    glBindFramebuffer(GL_FRAMEBUFFER, t->framebuffers[0]);
++    glViewport(0, 0, width, height);
++    glUseProgram(mProgramY);
++    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
++    glBindFramebuffer(GL_FRAMEBUFFER, t->framebuffers[1]);
++    glViewport(0, 0, width / 2, height / 2);
++    glUseProgram(mProgramUV);
++    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
++    // The encoder reads the buffer right after this returns.
++    glFinish();
++    const GLenum error = glGetError();
++
++    eglDestroyImageKHR(display, image);
++    if (error != GL_NO_ERROR) {
++        ALOGE("GL error during conversion: 0x%x", error);
++        return false;
++    }
++    return true;
++}
++
++}  // namespace android
+--- a/common/include/v4l2_codec2/common/GpuRgbaToNv12.h
++++ b/common/include/v4l2_codec2/common/GpuRgbaToNv12.h
+@@ -0,0 +1,52 @@
++// Copyright 2026 The Android Open Source Project
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef ANDROID_V4L2_CODEC2_COMMON_GPU_RGBA_TO_NV12_H
++#define ANDROID_V4L2_CODEC2_COMMON_GPU_RGBA_TO_NV12_H
++
++#include <map>
++#include <memory>
++
++#include <C2Buffer.h>
++
++namespace android {
++
++// Converts RGBA/RGBX gralloc buffers (e.g. screen-capture output) into NV12 dma-bufs on the GPU
++// with GLES2: the source is imported as an EGL_NATIVE_BUFFER_ANDROID image and sampled as an
++// external texture; luma is rendered into an R8 dma-buf image of the destination, interleaved
++// CbCr into a GR88 image at the chroma offset. Coefficients match libyuv::ABGRToNV12 (BT.601
++// limited range, 2x2 averaged chroma). Reading write-combined RGBA with the CPU was the
++// bottleneck of the CPU path; the GPU reads it at full speed.
++//
++// Not thread-safe: create and use it on one thread (the EGL context is made current there).
++class GpuRgbaToNv12 {
++public:
++    // Returns nullptr if EGL/GLES setup fails; callers then keep using the CPU path.
++    static std::unique_ptr<GpuRgbaToNv12> Create();
++    ~GpuRgbaToNv12();
++
++    // Converts |src| (visible |width| x |height|) into the NV12 dma-buf |dstFd| with luma pitch
++    // |pitch| and the CbCr plane at |uvOffset|. |dstKey| identifies the destination buffer so its
++    // render targets are created once. Blocks until the GPU has finished. Returns false on error.
++    bool convert(const C2ConstGraphicBlock& src, int dstFd, uint64_t dstKey, int width, int height,
++                 int pitch, int uvOffset);
++
++private:
++    struct Target;
++    GpuRgbaToNv12() = default;
++    bool initialize();
++    Target* target(int dstFd, uint64_t dstKey, int width, int height, int pitch, int uvOffset);
++
++    void* mDisplay = nullptr;  // EGLDisplay
++    void* mContext = nullptr;  // EGLContext
++    void* mSurface = nullptr;  // EGLSurface (1x1 pbuffer)
++    unsigned mProgramY = 0;
++    unsigned mProgramUV = 0;
++    unsigned mSourceTexture = 0;
++    std::map<uint64_t, std::unique_ptr<Target>> mTargets;
++};
++
++}  // namespace android
++
++#endif  // ANDROID_V4L2_CODEC2_COMMON_GPU_RGBA_TO_NV12_H
+--- a/components/Android.bp
++++ b/components/Android.bp
+@@ -22,6 +22,8 @@
+     ],
+ 
+     shared_libs: [
++        "libEGL",
++        "libGLESv2",
+         "android.hardware.graphics.common@1.0",
+         "libc2plugin_store",
+         "libchrome",
+@@ -35,6 +37,7 @@
+         "libui",
+     ],
+     static_libs: [
++        "libyuv_static",  // ABGRToNV12 for the convertor (not exported by libsfplugin_ccodec_utils)
+         "libv4l2_codec2_accel",
+         "libv4l2_codec2_common",
+     ],
+--- a/components/V4L2EncodeComponent.cpp
++++ b/components/V4L2EncodeComponent.cpp
+@@ -1209,12 +1209,12 @@
+     // encode work is queued.
+ }
+ 
+-std::shared_ptr<C2LinearBlock> V4L2EncodeComponent::fetchOutputBlock() {
++std::shared_ptr<C2LinearBlock> V4L2EncodeComponent::fetchOutputBlock(size_t size) {
+     // TODO(dstaessens): fetchLinearBlock() might be blocking.
+-    ALOGV("Fetching linear block (size: %u)", mOutputBufferSize);
++    ALOGV("Fetching linear block (size: %zu)", size);
+     std::shared_ptr<C2LinearBlock> outputBlock;
+     c2_status_t status = mOutputBlockPool->fetchLinearBlock(
+-            mOutputBufferSize,
++            size,
+             C2MemoryUsage(C2MemoryUsage::CPU_READ |
+                           static_cast<uint64_t>(BufferUsage::VIDEO_ENCODER)),
+             &outputBlock);
+@@ -1560,13 +1560,9 @@
+         return false;
+     }
+ 
+-    std::shared_ptr<C2LinearBlock> outputBlock = fetchOutputBlock();
+-    if (!outputBlock) {
+-        ALOGE("Failed to fetch output block");
+-        reportError(C2_CORRUPTED);
+-        return false;
+-    }
+-
++    // The client's block is fetched at dequeue time, sized to the encoded frame (see
++    // dequeueOutputBuffer()): fetching a max-size (2 MiB) block per frame up front allocated and
++    // zeroed fresh memory for every frame.
+     size_t bufferId = buffer->BufferId();
+ 
+     if (!std::move(*buffer).QueueMMap()) {
+@@ -1575,8 +1571,6 @@
+         return false;
+     }
+ 
+-    ALOG_ASSERT(!mOutputBuffersMap[bufferId]);
+-    mOutputBuffersMap[bufferId] = std::move(outputBlock);
+     ALOGV("%s(): Queued buffer in output queue (bufferId: %zu)", __func__, bufferId);
+     return true;
+ }
+@@ -1639,15 +1633,14 @@
+           ", bufferId: %zu, data size: %zu, EOS: %d)",
+           timestamp.InMicroseconds(), buffer->BufferId(), encodedDataSize, buffer->IsLast());
+ 
+-    if (!mOutputBuffersMap[buffer->BufferId()]) {
+-        ALOGE("Failed to find output block associated with output buffer");
+-        reportError(C2_CORRUPTED);
+-        return false;
+-    }
+-
+-    std::shared_ptr<C2LinearBlock> block = std::move(mOutputBuffersMap[buffer->BufferId()]);
++    std::shared_ptr<C2LinearBlock> block;
+     if (encodedDataSize > 0) {
+-        // Copy the bitstream from the driver's MMAP buffer into the client's block.
++        // Copy the bitstream from the driver's MMAP buffer into a client block of that size.
++        block = fetchOutputBlock(encodedDataSize);
++        if (!block) {
++            ALOGE("Failed to fetch output block (%zu bytes)", encodedDataSize);
++            return false;
++        }
+         const uint8_t* src = static_cast<const uint8_t*>(buffer->GetPlaneMapping(0));
+         C2WriteView view = block->map().get();
+         if (!src || view.error() != C2_OK || view.capacity() < encodedDataSize) {
+--- a/service/service.cpp
++++ b/service/service.cpp
+@@ -14,9 +14,10 @@
+ 
+ #include <v4l2_codec2/store/V4L2ComponentStore.h>
+ 
+-// Default policy for codec2.0 service.
++// Base policy: the codec2.0 default policy plus what the V4L2 service needs (Mesa for GPU
++// format conversion grows mappings with mremap(MREMAP_MAYMOVE)). Installed by the device.
+ static constexpr char kBaseSeccompPolicyPath[] =
+-        "/vendor/etc/seccomp_policy/android.hardware.media.c2@1.1-default-seccomp_policy";
++        "/vendor/etc/seccomp_policy/android.hardware.media.c2-v4l2-seccomp_policy";
+ 
+ // Additional device-specific seccomp permissions can be added in this file.
+ static constexpr char kExtSeccompPolicyPath[] =
