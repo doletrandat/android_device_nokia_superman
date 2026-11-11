@@ -1,0 +1,6 @@
+228c228
+< 	inc_zone_page_state(zpdesc_page(zpdesc), NR_ZSPAGES);
+---
+> 	/* NR_ZSPAGES exists only when zsmalloc is configured into the kernel. */
+233d232
+< 	dec_zone_page_state(zpdesc_page(zpdesc), NR_ZSPAGES);
