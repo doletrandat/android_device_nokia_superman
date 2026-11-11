@@ -12,10 +12,7 @@ for digest in "$boot_hash" "$fdt_hash" "$config_hash" "$notes_hash"; do
 done
 [ "$(getprop sys.boot_completed)" = 1 ]
 [ "$(getprop vendor.superman.audio_core.state)" = ready ]
-[ "$(cat /sys/block/mmcblk1/device/type)" = SD ]
-[ "$(cat /sys/block/mmcblk1/device/cid)" = ad4c534d53534430610000370a719200 ]
-[ "$(awk '$2 == "/" {print $1}' /proc/mounts)" = /dev/block/mmcblk1p2 ]
-[ "$(awk '$2 == "/data" {print $1}' /proc/mounts)" = /dev/block/mmcblk1p3 ]
+# CC52: no SD-card CID or fixed mmcblk1 node pins (other phones, other cards, later the eMMC).
 [ "$(sha256sum /lumia_sd/boot.img | cut -d ' ' -f1)" = "$boot_hash" ]
 [ "$(sha256sum /sys/firmware/fdt | cut -d ' ' -f1)" = "$fdt_hash" ]
 [ "$(zcat /proc/config.gz | sha256sum | cut -d ' ' -f1)" = "$config_hash" ]
@@ -27,7 +24,10 @@ stage=shared-memory
 [ "$(cat /sys/class/rmtfs/qcom_rmtfs_mem1/size)" = 0x00180000 ]
 [ -f /sys/firmware/devicetree/base/reserved-memory/rmtfs@fd80000/no-map ]
 stage=baselines
-read -r seed_hash extra < /vendor/etc/superman/modem-seeds.contract
+# CC52: the seeds are this phone's own MODEM_FS* copies, made by superman-provision.sh; the
+# contract that pins them lives on /data next to them, not in the shared image.
+[ "$(getprop vendor.superman.provision.modem)" = ready ]
+read -r seed_hash extra < /data/vendor/superman/modem-seeds.contract
 [ -z "$extra" ] && [ "${#seed_hash}" = 64 ]
 [ "$(sha256sum /data/vendor/rmtfs-pf29/baselines.sha256 | cut -d ' ' -f1)" = "$seed_hash" ]
 (cd / && sha256sum -c /data/vendor/rmtfs-pf29/baselines.sha256)
@@ -112,9 +112,16 @@ stage=filesystem
 /vendor/bin/superman-rmtfs -r -v -o /data/vendor/rmtfs-pf29 > /data/vendor/rmtfs-pf29/boot-rmtfs.log 2>&1 &
 daemon=$!
 printf '%s\n' "$daemon" > /dev/.superman-modem/rmtfs.pid
-/vendor/bin/superman-qrtr-probe > /dev/.superman-modem/services-before
-kill -0 "$daemon"
-grep -q '"service":14,' /dev/.superman-modem/services-before
+# rmtfs needs a moment to register its QRTR service (14); probing once raced it on the eMMC install (CC59).
+tries=0
+while :; do
+    kill -0 "$daemon"
+    /vendor/bin/superman-qrtr-probe > /dev/.superman-modem/services-before
+    grep -q '"service":14,' /dev/.superman-modem/services-before && break
+    tries=$((tries + 1))
+    [ "$tries" -lt 30 ]
+    sleep 0.5
+done
 stage=driver
 insmod /vendor/lib/modules/modem/qcom_q6v5_mss.ko
 module_owned=1
