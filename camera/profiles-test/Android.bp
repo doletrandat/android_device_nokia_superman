@@ -1,0 +1,7 @@
+cc_binary {
+    name: "superman-profiles-test",
+    srcs: ["profiles_test.cpp"],
+    shared_libs: ["libmedia", "libutils"],
+    cflags: ["-Wall", "-Werror"],
+    compile_multilib: "32",
+}
