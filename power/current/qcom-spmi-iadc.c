@@ -515,6 +515,23 @@ int superman_iadc_current_ua(struct device *dev,int *ua)
 }
 EXPORT_SYMBOL_GPL(superman_iadc_current_ua);
 
+/* Cached probe calibration; no ADC conversion or PMIC policy write. */
+int superman_iadc_get_calibration(struct device *dev,struct superman_iadc_calibration *cal)
+{
+ struct iio_dev *indio;struct iadc_chip *iadc;int ret=0;
+ if(!dev||!cal)return -EINVAL;
+ device_lock(dev);
+ if(!dev->driver||strcmp(dev->driver->name,"qcom-spmi-iadc")){ret=-ENODEV;goto out;}
+ indio=dev_get_drvdata(dev);
+ if(!indio||indio->dev.parent!=dev||indio->num_channels!=ARRAY_SIZE(iadc_channels)){ret=-ENODEV;goto out;}
+ iadc=iio_priv(indio);mutex_lock(&iadc->lock);
+ if(iadc->gain<=iadc->offset[0]||iadc->gain-iadc->offset[0]<1000||!iadc->rsense[0])ret=-ERANGE;
+ else {cal->gain=iadc->gain;cal->offset=iadc->offset[0];cal->rsense_uohm=iadc->rsense[0];}
+ mutex_unlock(&iadc->lock);
+ out:device_unlock(dev);return ret;
+}
+EXPORT_SYMBOL_GPL(superman_iadc_get_calibration);
+
 static void iadc_disable_irq_wake(void *data)
 {
  disable_irq_wake((unsigned long)data);

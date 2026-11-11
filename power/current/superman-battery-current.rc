@@ -8,7 +8,8 @@ service superman-battery-current /system/bin/sh /vendor/bin/superman-battery-cur
     seclabel u:r:init:s0
     disabled
     oneshot
+    stdio_to_kmsg
 
-# BatteryMonitor discovers current_now once at initialization; reconnect Health.
+# BatteryMonitor discovers current_now and capacity at initialization; reconnect Health.
 on property:vendor.superman.battery_current.state=ready
     restart health-hal-2-1

@@ -1,4 +1,5 @@
-f0a688b8425243be20bdb44adeb10a18ac0cd24ad9e397e2a5684bf32d3456a0  /vendor/bin/superman-battery-current.sh
-fb1f5508319fc0468d2e13e59aba97033087bdf2ad42b6d866bd20fb791e1d58  /vendor/etc/init/superman-battery-current.rc
-d328029b6bc34e5891021aab013f68153b98d2b4b433607397d64f63938f6b8a  /vendor/lib/modules/battery-current/qcom-spmi-iadc.ko
+f50db62628255bd4c25b44e51cee21da51c6857a51b0102c982516c12b9c039d  /vendor/bin/superman-battery-current.sh
+09c0d61008c16179c71fa064055195b5e7530223530affe670afe2d72fa1555e  /vendor/etc/init/superman-battery-current.rc
+9daa5a7aa5c20535e88307a559ef4a67ee067f94244fb0c09b2549422de491ab  /vendor/lib/modules/battery-current/qcom-spmi-iadc.ko
 84f274bd2101599ad60fd05fdc6ea2d69eb25d194fc9561585fb46835f98d81e  /vendor/lib/modules/battery-current/superman-iadc-current.ko
+10744fc89d0c5aa7178662264d4c8ff1159552d0ff8187d95def0aa1099986d7  /vendor/lib/modules/battery-current/superman-bms-gauge.ko
