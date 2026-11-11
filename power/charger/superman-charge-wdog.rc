@@ -1,0 +1,3 @@
+# Pet the locked PM8226 charger watchdog so charge cycles can run; limits unchanged.
+on post-fs-data
+    insmod /vendor/lib/modules/charger/superman-charge-wdog.ko
